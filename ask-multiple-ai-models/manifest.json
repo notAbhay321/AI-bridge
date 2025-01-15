@@ -1,0 +1,50 @@
+{
+    "manifest_version": 3,
+    "default_locale": "en",
+
+    "name": "AI-MultiPrompt",
+    "description": "A Web Extension that allows to simultaneously submit a prompt to multiple AI chats",
+    "version": "1.1.1",
+
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png",
+        "1024": "icons/icon1024.png"
+    },
+
+    "background": {
+        "service_worker": "background.js"
+    },
+
+    "content_scripts": [{
+        "js": [ "content.js"],
+        "matches": [ "<all_urls>" ]
+    }],
+    "action": {
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "32": "icons/icon32.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+
+    "permissions": [
+        "tabs",
+        "scripting",
+        "clipboardWrite",
+        "storage"
+    ],
+    "host_permissions": [
+        "*://chatgpt.com/*", 
+        "*://*.phind.com/*" ,
+        "*://gemini.google.com/*",
+        "*://*.perplexity.ai/*",
+        "*://copilot.microsoft.com/*",
+        "*://chat.deepseek.com/*",
+        "*://chat.mistral.ai/*",
+        "*://claude.ai/*"
+    ]
+}

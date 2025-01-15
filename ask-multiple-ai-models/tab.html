@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="tab.css">
+    <script type="module" src="ai-chatgpt.js"></script>
+    <script type="module" src="ai-claude.js"></script>
+    <script type="module" src="ai-copilot.js"></script>
+    <script type="module" src="ai-deepseek.js"></script>
+    <script type="module" src="ai-gemini.js"></script>
+    <script type="module" src="ai-mistral.js"></script>
+    <script type="module" src="ai-perplexity.js"></script>
+    <script type="module" src="ai-phind.js"></script>
+    <script type="module" src="tab-esm.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Side Navigation -->
+        <nav class="side-nav">
+            <div class="nav-header">
+                <h3>AI Multi-Prompt</h3>
+                <span class="version">v1.1.1</span>
+            </div>
+            <div class="nav-content">
+                <button class="new-chat-btn">+ New Chat</button>
+                <div class="chat-list">
+                    <div class="chat-item active">Chat 1</div>
+                    <!-- More chat items will be added dynamically -->
+                </div>
+            </div>
+            <div class="nav-footer">
+                <button class="settings-btn">Settings</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="chat-container">
+                <!-- Chat messages will be displayed here -->
+            </div>
+            
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <!-- Toggle Container moved here -->
+                <div class="toggle-container">
+                    <button class="toggle all-ai-toggle" title="Toggle All AI" id="all-ai">All AI</button>
+                    <button class="toggle ai-button" data-url="https://chatgpt.com/" data-query="*://chatgpt.com/*" id="openai">ChatGPT</button>
+                    <button class="toggle ai-button" data-url="https://gemini.google.com/" data-query="*://gemini.google.com/*" id="gemini">Gemini</button>
+                    <button class="toggle ai-button" data-url="https://www.perplexity.ai/" data-query="*://*.perplexity.ai/*" id="perplexity">Perplexity</button>
+                    <button class="toggle ai-button" data-url="https://copilot.microsoft.com/" data-query="*://copilot.microsoft.com/*" id="copilot">Copilot</button>
+                    <button class="toggle ai-button" data-url="https://chat.deepseek.com/" data-query="*://chat.deepseek.com/*" id="deepseek">Deepseek</button>
+                    <button class="toggle ai-button" data-url="https://chat.mistral.ai/chat" data-query="*://chat.mistral.ai/*" id="mistral">Mistral</button>
+                    <button class="toggle ai-button" data-url="https://www.phind.com/" data-query="*://*.phind.com/*" id="phind">Phind</button>
+                    <button class="toggle ai-button" data-url="https://claude.ai/" data-query="*://claude.ai/*" id="claude">Claude</button>
+                </div>
+                
+                <!-- Input Container -->
+                <div class="input-container">
+                    <textarea id="text-prompt" placeholder="Type your message here..."></textarea>
+                    <button id="submit-prompt" disabled>
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
