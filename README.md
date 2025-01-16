@@ -63,6 +63,7 @@ AI Bridge is a powerful browser extension that enables simultaneous interaction 
 
 ## Keyboard Shortcuts
 
+- `Ctrl + Shift + L`: Open AI Bridge in a new tab
 - `Ctrl + Enter`: Send message
 - `Ctrl + V`: Paste images for analysis
 - Additional shortcuts configurable in settings
