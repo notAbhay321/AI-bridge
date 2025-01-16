@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2024-03-xx
+
+### Added
+- Added automatic tab closing when clicking outside
+- Added smooth transition effects for button states
+- Added tab grouping for AI models
+- Added improved image handling with Google Lens integration
+- Added automatic pinning for AI model tabs
+
+### Changed
+- Enhanced UI transitions and animations
+- Improved button state management
+- Optimized tab management system
+- Modified tab behavior to open as pinned tabs by default
+
+## [1.2.0] - 2024-03-xx
+
+### Added
+- Added settings panel for customization
+  - Theme customization
+  - Keyboard shortcuts configuration
+  - AI model preferences
+  - Interface layout options
+
+## [1.1.2] - 2024-03-xx
+
+### Added
+- Enhanced AI model support with improved compatibility
+- Added support for custom themes
+- Improved chat session management
+- Enhanced UI responsiveness
+- Added chat history features
+- Improved error handling and user feedback
+
+### Changed
+- Optimized performance for multiple AI chats
+- Enhanced chat list management
+- Improved navigation experience
+
 ## [1.1.1] - 2024-03-xx
 
 ### Added

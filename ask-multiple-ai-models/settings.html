@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="settings.css">
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="settings-container">
+        <header class="settings-header">
+            <h1>Settings</h1>
+            <span class="version">v1.2.0</span>
+        </header>
+
+        <main class="settings-content">
+            <section class="settings-section">
+                <h2>Theme</h2>
+                <div class="setting-group">
+                    <label for="theme-select">Color Theme</label>
+                    <select id="theme-select">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="setting-group custom-colors" id="custom-colors">
+                    <label>Custom Colors</label>
+                    <div class="color-picker">
+                        <label>Primary Color</label>
+                        <input type="color" id="primary-color" value="#6C5CE7">
+                    </div>
+                    <div class="color-picker">
+                        <label>Secondary Color</label>
+                        <input type="color" id="secondary-color" value="#A8A5E6">
+                    </div>
+                    <div class="color-picker">
+                        <label>Background Color</label>
+                        <input type="color" id="background-color" value="#1A1A1A">
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>Keyboard Shortcuts</h2>
+                <div class="setting-group">
+                    <label>Send Message</label>
+                    <input type="text" id="shortcut-send" value="Ctrl+Enter" readonly>
+                    <button class="edit-shortcut">Edit</button>
+                </div>
+                <div class="setting-group">
+                    <label>New Chat</label>
+                    <input type="text" id="shortcut-new-chat" value="Ctrl+N" readonly>
+                    <button class="edit-shortcut">Edit</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>AI Models</h2>
+                <div class="setting-group">
+                    <label>Default Models</label>
+                    <div class="checkbox-group" id="ai-models-list">
+                        <div class="model-item" draggable="true" data-model="chatgpt">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="chatgpt" checked>
+                                ChatGPT
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="gemini">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="gemini" checked>
+                                Gemini
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="claude">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="claude" checked>
+                                Claude
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="copilot">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="copilot">
+                                Copilot
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="mistral">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="mistral">
+                                Mistral
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="perplexity">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="perplexity">
+                                Perplexity
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="deepseek">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="deepseek">
+                                Deepseek
+                            </label>
+                        </div>
+                        <div class="model-item" draggable="true" data-model="phind">
+                            <span class="drag-handle">⋮⋮</span>
+                            <label class="checkbox">
+                                <input type="checkbox" id="phind">
+                                Phind
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <button id="login-all" class="primary-button">Login to All Selected Models</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>Interface</h2>
+                <div class="setting-group">
+                    <label>Chat Layout</label>
+                    <select id="layout-select">
+                        <option value="default">Default</option>
+                        <option value="compact">Compact</option>
+                        <option value="comfortable">Comfortable</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox">
+                        <input type="checkbox" id="show-timestamps" checked>
+                        Show Message Timestamps
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox">
+                        <input type="checkbox" id="auto-scroll" checked>
+                        Auto-scroll to New Messages
+                    </label>
+                </div>
+            </section>
+        </main>
+
+        <footer class="settings-footer">
+            <button id="save-settings" class="primary-button">Save Changes</button>
+            <button id="reset-settings" class="secondary-button">Reset to Default</button>
+        </footer>
+    </div>
+    <script type="module" src="settings.js"></script>
+</body>
+</html> 

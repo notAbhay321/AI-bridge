@@ -1,28 +1,12 @@
+// Handle messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("Received request: ", request);
-
-    if (request.theme === 'dark') {
-        chrome.action.setIcon({ 
-            path: {
-                "16": "icons/icon16.png",
-                "32": "icons/icon32.png",
-                "48": "icons/icon48.png",
-                "128": "icons/icon128.png"
-            }
-        });
-    }
-    else if (request.theme === 'light') {
-        chrome.action.setIcon({ 
-            path: {
-                "16": "icons/icon16.png",
-                "32": "icons/icon32.png",
-                "48": "icons/icon48.png",
-                "128": "icons/icon128.png"
-            }
-        });
+    // Log messages from content scripts
+    if (request.log) {
+        console.log(request.log);
     }
 });
 
+// Open extension in new tab when clicked
 chrome.action.onClicked.addListener(() => {
     chrome.tabs.create({
         url: 'tab.html'

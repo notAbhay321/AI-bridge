@@ -1,50 +1,41 @@
 {
     "manifest_version": 3,
-    "default_locale": "en",
-
-    "name": "AI-MultiPrompt",
-    "description": "A Web Extension that allows to simultaneously submit a prompt to multiple AI chats",
-    "version": "1.1.1",
-
-    "icons": {
-        "16": "icons/icon16.png",
-        "32": "icons/icon32.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png",
-        "1024": "icons/icon1024.png"
-    },
-
-    "background": {
-        "service_worker": "background.js"
-    },
-
-    "content_scripts": [{
-        "js": [ "content.js"],
-        "matches": [ "<all_urls>" ]
-    }],
-    "action": {
-        "default_icon": {
-            "16": "icons/icon16.png",
-            "32": "icons/icon32.png",
-            "48": "icons/icon48.png",
-            "128": "icons/icon128.png"
-        }
-    },
-
+    "name": "AI Bridge",
+    "version": "1.2.1",
+    "description": "Connect and interact with multiple AI models seamlessly",
     "permissions": [
         "tabs",
         "scripting",
         "clipboardWrite",
-        "storage"
+        "storage",
+        "unlimitedStorage",
+        "tabGroups"
     ],
     "host_permissions": [
-        "*://chatgpt.com/*", 
-        "*://*.phind.com/*" ,
+        "*://chat.openai.com/*",
         "*://gemini.google.com/*",
-        "*://*.perplexity.ai/*",
+        "*://claude.ai/*",
         "*://copilot.microsoft.com/*",
-        "*://chat.deepseek.com/*",
         "*://chat.mistral.ai/*",
-        "*://claude.ai/*"
-    ]
+        "*://*.perplexity.ai/*",
+        "*://chat.deepseek.com/*",
+        "*://*.phind.com/*"
+    ],
+    "action": {
+        "default_popup": "tab.html"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [{
+        "resources": ["settings.html", "settings.js", "settings.css"],
+        "matches": ["<all_urls>"]
+    }]
 }
