@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [1.2.1] - 2024-03-xx
 
 ### Added
+- Added keyboard shortcut (Ctrl+Shift+L) to quickly open AI Bridge
 - Added automatic tab closing when clicking outside
 - Added smooth transition effects for button states
 - Added tab grouping for AI models

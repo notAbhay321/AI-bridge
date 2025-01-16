@@ -6,9 +6,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Open extension in new tab when clicked
-chrome.action.onClicked.addListener(() => {
+// Function to open extension in new tab
+function openAIBridge() {
     chrome.tabs.create({
         url: 'tab.html'
     });
+}
+
+// Open extension in new tab when clicked
+chrome.action.onClicked.addListener(openAIBridge);
+
+// Handle keyboard shortcuts
+chrome.commands.onCommand.addListener((command, tab) => {
+    console.log('Command received:', command);  // Debug log
+    if (command === 'open-ai-bridge') {
+        console.log('Opening AI Bridge');  // Debug log
+        openAIBridge();
+    }
 });
