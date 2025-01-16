@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
+    <title>AI Bridge</title>
     <link rel="stylesheet" href="tab.css">
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script type="module" src="ai-chatgpt.js"></script>
     <script type="module" src="ai-claude.js"></script>
     <script type="module" src="ai-copilot.js"></script>
@@ -18,17 +19,35 @@
         <!-- Side Navigation -->
         <nav class="side-nav">
             <div class="nav-header">
-                <h3>AI Multi-Prompt</h3>
-                <span class="version">v1.1.1</span>
+                <div class="logo-container">
+                    <div class="logo-text">AI Bridge</div>
+                    <div class="logo-bridge"></div>
+                    <div class="version-text">v1.1.1</div>
+                </div>
             </div>
             <div class="nav-content">
                 <button class="new-chat-btn">+ New Chat</button>
                 <div class="chat-list">
                     <div class="chat-item active">Chat 1</div>
-                    <!-- More chat items will be added dynamically -->
+                    <div class="chat-item" style="text-align: left;">
+                        Chat 2
+                        <div class="chat-menu">
+                            <button class="chat-menu-btn">⋮</button>
+                            <div class="chat-dropdown">
+                                <button class="dropdown-item rename">✏️ Rename</button>
+                                <button class="dropdown-item delete">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-item">Chat 3</div>
+                    <div class="chat-item">Chat 4</div>
+                    <div class="chat-item">Chat 5</div>
+                    <div class="chat-item">Chat 6</div>
+                    <div class="chat-item">Chat 7</div>
                 </div>
             </div>
             <div class="nav-footer">
+                <button class="login-all-btn">Login to AI Models</button>
                 <button class="settings-btn">Settings</button>
             </div>
         </nav>
@@ -41,7 +60,6 @@
             
             <!-- Bottom Controls -->
             <div class="bottom-controls">
-                <!-- Toggle Container moved here -->
                 <div class="toggle-container">
                     <button class="toggle all-ai-toggle" title="Toggle All AI" id="all-ai">All AI</button>
                     <button class="toggle ai-button" data-url="https://chatgpt.com/" data-query="*://chatgpt.com/*" id="openai">ChatGPT</button>
@@ -54,7 +72,6 @@
                     <button class="toggle ai-button" data-url="https://claude.ai/" data-query="*://claude.ai/*" id="claude">Claude</button>
                 </div>
                 
-                <!-- Input Container -->
                 <div class="input-container">
                     <textarea id="text-prompt" placeholder="Type your message here..."></textarea>
                     <button id="submit-prompt" disabled>
