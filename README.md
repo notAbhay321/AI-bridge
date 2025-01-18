@@ -78,7 +78,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Version History
 
-Current Version: 1.2.1
+Current Version: 1.1.1-patch-2
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and updates.
 
