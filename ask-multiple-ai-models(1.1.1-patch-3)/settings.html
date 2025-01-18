@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI-Bridge Settings</title>
+    <link rel="stylesheet" href="settings.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="settings-container">
+        <header>
+            <h1 class="glitch" data-text="AI-Bridge Settings">AI-Bridge Settings</h1>
+            <span class="version">v1.1.1</span>
+        </header>
+
+        <main>
+            <!-- AI Models Section -->
+            <section class="settings-section" id="ai-models">
+                <h2>AI Models</h2>
+                <div class="models-grid">
+                    <div class="model-item" draggable="true" data-model="chatgpt">
+                        <div class="model-header">
+                            <span class="drag-handle">⋮⋮</span>
+                            <span class="model-name">ChatGPT</span>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="model-item" draggable="true" data-model="gemini">
+                        <div class="model-header">
+                            <span class="drag-handle">⋮⋮</span>
+                            <span class="model-name">Gemini</span>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Add other AI models similarly -->
+                </div>
+            </section>
+
+            <!-- Keyboard Shortcuts Section -->
+            <section class="settings-section" id="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+                <div class="setting-item">
+                    <label>Use Ctrl+Enter to send message</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ctrl-enter-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Appearance Section -->
+            <section class="settings-section" id="appearance">
+                <h2>Appearance</h2>
+                <div class="setting-item">
+                    <label>Dark Mode</label>
+                    <label class="switch">
+                        <input type="checkbox" id="dark-mode-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>Animation Effects</label>
+                    <label class="switch">
+                        <input type="checkbox" id="animation-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Chat Settings Section -->
+            <section class="settings-section" id="chat-settings">
+                <h2>Chat Settings</h2>
+                <div class="setting-item">
+                    <label>Auto-save Chats</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-save-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>Max Saved Chats</label>
+                    <input type="number" id="max-chats" value="50" min="1" max="100">
+                </div>
+            </section>
+
+            <!-- Notification Settings -->
+            <section class="settings-section" id="notifications">
+                <h2>Notifications</h2>
+                <div class="setting-item">
+                    <label>Response Notifications</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notification-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>Sound Effects</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <button id="save-settings" class="save-btn">Save Changes</button>
+            <button id="reset-settings" class="reset-btn">Reset to Default</button>
+        </footer>
+    </div>
+    <script src="settings.js"></script>
+</body>
+</html> 
