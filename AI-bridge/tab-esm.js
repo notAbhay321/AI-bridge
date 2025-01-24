@@ -9,14 +9,13 @@ let currentTabId;
 
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyC5tmNdGgEugYvGRlUSM0h2ytfsKbhYDL0",
-    authDomain: "ai-bridge-321.firebaseapp.com",
-    projectId: "ai-bridge-321",
-    storageBucket: "ai-bridge-321.firebasestorage.app",
-    messagingSenderId: "367598803344",
-    appId: "1:367598803344:web:46c1dac738c50d5e287b15",
-    measurementId: "G-JQDL8ES2VD",
-    databaseURL: "https://ai-bridge-321-default-rtdb.firebaseio.com"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
 /**
