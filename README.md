@@ -43,3 +43,15 @@ Deepseek: https://chat.deepseek.com/
 Perplexity: https://www.perplexity.ai/
 Mistral: https://chat.mistral.ai/chat
 Claude: https://claude.ai/chat
+
+### Setup
+
+1. Clone the repository
+2. Copy `.env.example` to `.env`
+3. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+4. Get your Firebase configuration from Project Settings
+5. Fill in your Firebase credentials in the `.env` file
+6. Install dependencies and build the project
+
+### Security Note
+Never commit your `.env` file or expose your Firebase credentials. The `.env` file is listed in `.gitignore` to prevent accidental commits.
