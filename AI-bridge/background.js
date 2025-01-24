@@ -1,33 +1,28 @@
 // Function to open AI-Bridge
 function openAIBridge() {
-    console.log('Opening AI-Bridge...');
     chrome.tabs.create({
-        url: 'tab.html'
-    }).then(() => {
-        console.log('Tab created successfully');
-    }).catch((error) => {
-        console.error('Error creating tab:', error);
+        url: 'tab.html',
+        active: true
+    }).catch(error => {
+        console.error('Error opening AI-Bridge:', error);
     });
 }
 
-// Listen for keyboard command
+// Listen for keyboard commands
 chrome.commands.onCommand.addListener((command) => {
     console.log('Command received:', command);
-    if (command === "open-ai-bridge") {
-        console.log('Executing open-ai-bridge command');
+    if (command === "_execute_action") {
         openAIBridge();
     }
 });
 
 // Handle toolbar icon click
 chrome.action.onClicked.addListener(() => {
-    console.log('Icon clicked');
     openAIBridge();
 });
 
-// Listen for theme changes and other messages
+// Listen for messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("Received request: ", request);
     if (request.theme === 'dark' || request.theme === 'light') {
         chrome.action.setIcon({ 
             path: {
@@ -39,4 +34,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     }
 });
+
+// Log on startup
+console.log('AI-Bridge background script loaded');
 

@@ -28,13 +28,20 @@ This extension submit a single prompt simultaneously to different AI chat previo
 * Copy last submitted prompt to the clipboard
 * Allows to choose which AI are involved in prompt analysis
 * Opens a pinned tab for each AI chat chosen (if doesn't already opened yet)
+* Quick access with Alt+A keyboard shortcut
 
 ### Usage 
 
-1. Open the extension popup
+1. Open the extension:
+   - Click the extension icon in toolbar, or
+   - Press Alt+A (new shortcut for better compatibility)
 2. Write prompt
 3. Choose the AI chat you want to submit the prompt to and click on the "Submit" button
 
+### Keyboard Shortcuts
+
+* `Alt+A` - Open AI-Bridge (previously Ctrl+Shift+L)
+* `Ctrl+Enter` - Send prompt when input field is focused
 
 ChatGPT: https://chatgpt.com/
 Gemini: https://gemini.google.com/

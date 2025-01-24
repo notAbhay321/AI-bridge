@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Various UI improvements and refinements
 - Enhanced chat management system
 - Optimized chat loading performance
+- Changed keyboard shortcut from Ctrl+Shift+L to Alt+A for better compatibility
 
 ## [1.1.1] - 2024-03-xx
 

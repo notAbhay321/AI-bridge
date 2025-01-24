@@ -32,10 +32,10 @@
     },
 
     "commands": {
-        "open-ai-bridge": {
+        "_execute_action": {
             "suggested_key": {
-                "default": "Ctrl+Shift+L",
-                "mac": "Command+Shift+L"
+                "default": "Alt+A",
+                "mac": "Alt+A"
             },
             "description": "Open AI-Bridge"
         }
@@ -44,7 +44,8 @@
     "permissions": [
         "storage",
         "scripting",
-        "tabs"
+        "tabs",
+        "commands"
     ],
     "host_permissions": [
         "*://chatgpt.com/*", 
@@ -76,7 +77,8 @@
             "firebase-app.js",
             "firebase-auth.js",
             "firebase-firestore.js",
-            "firebase-database.js"
+            "firebase-database.js",
+            "tab.html"
         ],
         "matches": ["<all_urls>"]
     }]
