@@ -1,27 +1,17 @@
 {
     "manifest_version": 3,
-    "default_locale": "en",
-
     "name": "AI-MultiPrompt",
     "description": "A Web Extension that allows to simultaneously submit a prompt to multiple AI chats",
-    "version": "1.1.1",
+    "version": "1.2.1",
+    "default_locale": "en",
 
     "icons": {
         "16": "icons/icon16.png",
         "32": "icons/icon32.png",
         "48": "icons/icon48.png",
-        "128": "icons/icon128.png",
-        "1024": "icons/icon1024.png"
+        "128": "icons/icon128.png"
     },
 
-    "background": {
-        "service_worker": "background.js"
-    },
-
-    "content_scripts": [{
-        "js": [ "content.js"],
-        "matches": [ "<all_urls>" ]
-    }],
     "action": {
         "default_icon": {
             "16": "icons/icon16.png",
@@ -30,6 +20,15 @@
             "128": "icons/icon128.png"
         }
     },
+
+    "background": {
+        "service_worker": "background.js"
+    },
+
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+    }],
 
     "commands": {
         "_execute_action": {
@@ -47,8 +46,9 @@
         "tabs",
         "commands"
     ],
+
     "host_permissions": [
-        "*://chatgpt.com/*", 
+        "*://chatgpt.com/*",
         "*://*.phind.com/*",
         "*://gemini.google.com/*",
         "*://*.perplexity.ai/*",
@@ -61,13 +61,10 @@
         "*://*.firebaseapp.com/*",
         "*://firestore.googleapis.com/*"
     ],
-    
-    "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'"
-    },
 
     "web_accessible_resources": [{
         "resources": [
+            "tab.html",
             "auth.html",
             "auth.css",
             "auth.js",
@@ -78,7 +75,7 @@
             "firebase-auth.js",
             "firebase-firestore.js",
             "firebase-database.js",
-            "tab.html"
+            "config.js"
         ],
         "matches": ["<all_urls>"]
     }]
