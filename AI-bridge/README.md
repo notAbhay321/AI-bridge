@@ -43,6 +43,8 @@ This extension submit a single prompt simultaneously to different AI chat previo
 * `Alt+A` - Open AI-Bridge (previously Ctrl+Shift+L)
 * `Ctrl+Enter` - Send prompt when input field is focused
 
+### AI Model Links
+
 ChatGPT: https://chatgpt.com/
 Gemini: https://gemini.google.com/
 Copilot: https://copilot.microsoft.com/
@@ -54,11 +56,38 @@ Claude: https://claude.ai/chat
 ### Setup
 
 1. Clone the repository
-2. Copy `.env.example` to `.env`
+2. Copy `config.example.js` to `config.js`
 3. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
 4. Get your Firebase configuration from Project Settings
-5. Fill in your Firebase credentials in the `.env` file
+5. Fill in your Firebase credentials in `config.js`
 6. Install dependencies and build the project
 
-### Security Note
-Never commit your `.env` file or expose your Firebase credentials. The `.env` file is listed in `.gitignore` to prevent accidental commits.
+### Security Best Practices
+
+1. **API Key Management**:
+   - Never commit `config.js` with real credentials
+   - Use `config.example.js` as a template
+   - Rotate API keys if accidentally exposed
+   - Set up API key restrictions in Firebase Console
+
+2. **Firebase Security**:
+   - Enable Authentication
+   - Set up proper Firestore rules
+   - Restrict API key usage by domain
+   - Monitor usage in Firebase Console
+
+3. **Local Development**:
+   - Keep `config.js` in `.gitignore`
+   - Use separate development credentials
+   - Regularly check for security alerts
+   - Follow Firebase security best practices
+
+### Important Security Note
+If you fork or clone this repository, make sure to:
+1. Never commit real Firebase credentials
+2. Create your own Firebase project
+3. Use your own API keys
+4. Set up proper security rules
+5. Monitor your Firebase usage
+
+The project maintainers are not responsible for any misuse of exposed credentials.

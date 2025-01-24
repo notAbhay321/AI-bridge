@@ -1,0 +1,22 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Config files with sensitive data
+config.js
+
+# Dependencies
+node_modules/
+
+# Build files
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db 

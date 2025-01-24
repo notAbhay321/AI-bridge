@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2024-03-xx
+
+### Security
+- Rotated Firebase API keys due to accidental exposure
+- Enhanced security configuration handling
+- Updated documentation for secure credential management
+
 ## [1.2.0] - 2024-03-xx
 
 ### Added
