@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication - AI Bridge</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="login">Login</button>
+                <button class="tab-btn" data-tab="register">Register</button>
+                <button class="tab-btn" data-tab="ai-login">All AI Login</button>
+            </div>
+            
+            <div class="form-container" id="login-form">
+                <h2>Login</h2>
+                <form>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" placeholder="Valid email address" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="at least 6 characters" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Login</button>
+                </form>
+            </div>
+
+            <div class="form-container hidden" id="register-form">
+                <h2>Register</h2>
+                <form>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="register-email" placeholder="Valid email address" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="register-password" placeholder="at least 6 characters" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Register</button>
+                </form>
+            </div>
+
+            <div class="form-container hidden" id="ai-login-form">
+                <h2>All AI Login</h2>
+                <div class="ai-buttons">
+                    <button class="ai-login-btn" data-url="https://chatgpt.com/">ChatGPT</button>
+                    <button class="ai-login-btn" data-url="https://gemini.google.com/">Gemini</button>
+                    <button class="ai-login-btn" data-url="https://www.perplexity.ai/">Perplexity</button>
+                    <button class="ai-login-btn" data-url="https://copilot.microsoft.com/">Copilot</button>
+                    <button class="ai-login-btn" data-url="https://chat.deepseek.com/">Deepseek</button>
+                    <button class="ai-login-btn" data-url="https://chat.mistral.ai/chat">Mistral</button>
+                    <button class="ai-login-btn" data-url="https://www.phind.com/">Phind</button>
+                    <button class="ai-login-btn" data-url="https://claude.ai/">Claude</button>
+                </div>
+                <button class="auth-btn" id="open-all">Open All AI Tabs</button>
+            </div>
+        </div>
+    </div>
+    <script src="firebase-app.js"></script>
+    <script src="firebase-auth.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html> 
