@@ -1,13 +1,14 @@
 // Configuration object for the extension
 const config = {
     firebase: {
-        apiKey: "AIzaSyC5tmNdGgEugYvGRlUSM0h2ytfsKbhYDL0",
-        authDomain: "ai-bridge-321.firebaseapp.com",
-        projectId: "ai-bridge-321",
-        storageBucket: "ai-bridge-321.firebasestorage.app",
-        messagingSenderId: "367598803344",
-        appId: "1:367598803344:web:46c1dac738c50d5e287b15",
-        measurementId: "G-JQDL8ES2VD"
+        // Replace these with your own Firebase credentials
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID",
+        measurementId: "YOUR_MEASUREMENT_ID"
     }
 };
 
