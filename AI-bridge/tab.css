@@ -23,7 +23,9 @@ body {
     background-color: #202123;
     display: flex;
     flex-direction: column;
-    border-right: none;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    height: 100vh;
+    overflow: hidden;
 }
 
 .nav-header {
@@ -48,8 +50,23 @@ body {
 
 .nav-content {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-footer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: #202123;
+    flex-wrap: wrap;
+    min-height: 40px;
 }
 
 .new-chat-btn {
@@ -62,7 +79,7 @@ body {
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -70,36 +87,29 @@ body {
 
 .new-chat-btn:hover {
     background-color: #2A2B32;
-}
-
-.new-chat-btn::before {
-    content: "+";
-    font-size: 16px;
-    font-weight: bold;
+    border-color: rgba(255,255,255,.3);
 }
 
 .time-separator {
-    padding: 10px 0;
-    font-size: 11px;
-    color: #999;
+    padding: 8px 0;
+    font-size: 12px;
+    color: #888;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     text-align: center;
     position: relative;
-    margin: 4px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin: 4px 8px;
 }
 
 .time-separator::before {
     content: '';
     position: absolute;
-    left: 16px;
-    right: 16px;
+    left: 0;
+    right: 0;
     height: 1px;
     background: rgba(255,255,255,0.1);
+    top: 50%;
     z-index: 0;
 }
 
@@ -108,6 +118,7 @@ body {
     padding: 0 8px;
     position: relative;
     z-index: 1;
+    font-size: 11px;
 }
 
 .chat-list {
@@ -115,7 +126,10 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    max-height: calc(100vh - 200px);
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    margin-bottom: 8px;
 }
 
 .chat-item {
@@ -125,10 +139,10 @@ body {
     padding: 12px 14px;
     cursor: pointer;
     transition: background-color 0.2s;
-    border-radius: 0;
-    margin: 0;
+    border-radius: 6px;
+    margin: 0 8px;
     color: #ececf1;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid transparent;
 }
 
 .chat-item:hover {
@@ -137,6 +151,7 @@ body {
 
 .chat-item.active {
     background-color: #343541;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .chat-item-left {
@@ -163,27 +178,51 @@ body {
 
 .chat-icons {
     display: flex;
-    gap: 5px;
+    gap: 4px;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s ease;
+    visibility: hidden;
 }
 
 .chat-item:hover .chat-icons {
     opacity: 1;
+    visibility: visible;
 }
 
 .chat-icon {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 2px;
-    font-size: 14px;
+    padding: 6px;
+    color: #ececf1;
     opacity: 0.7;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .chat-icon:hover {
     opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.rename-icon {
+    color: #10a37f;
+}
+
+.archive-icon {
+    color: #888;
+}
+
+.delete-icon {
+    color: #ef4146;
 }
 
 /* Time separator styles */
@@ -207,22 +246,97 @@ body {
     background: #1e1e1e;
 }
 
-.nav-footer {
-    padding: 20px;
-    border-top: 1px solid rgba(123, 44, 249, 0.2);
+.side-icons {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    padding: 12px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    color: #ececf1;
+    padding: 3px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.icon-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Default state (logged out) */
+.login-icon svg {
+    color: #ef4146;
+    opacity: 1;
+}
+
+/* Logged in state */
+.login-icon.logged-in svg {
+    color: #10a37f;
+    opacity: 1;
+}
+
+/* Remove any opacity inheritance */
+.login-icon, 
+.login-icon.logged-in {
+    opacity: 1;
+}
+
+.login-icon:hover svg {
+    opacity: 0.8;
+}
+
+.settings-icon svg {
+    color: #10a37f;
+}
+
+.archive-icon svg {
+    color: #888;
+}
+
+.refresh-btn svg {
+    color: #10a37f;
+}
+
+/* Remove any potential tooltip or text display */
+[title],
+[data-tooltip] {
+    font-size: 0;
+    text-indent: -9999px;
 }
 
 .settings-btn {
     width: 100%;
-    padding: 10px;
-    background-color: #2a2a2a;
-    color: #fff;
-    border: 1px solid #3a3a3a;
-    border-radius: 5px;
+    padding: 6px 8px;
+    background-color: transparent;
+    color: #888;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
     cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.settings-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
 }
 
 /* Main Content Styles */
@@ -392,26 +506,55 @@ body {
     background-color: #343541;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    align-items: flex-end;
 }
 
 .message {
     max-width: 90%;
-    align-self: flex-end;
+    margin-left: auto;
+    margin-right: 2rem;
+    width: fit-content;
+    min-width: 40px;
     background-color: #343541;
-    padding: 1rem;
-    border-radius: 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
     color: #ececf1;
     animation: fadeIn 0.3s ease;
     position: relative;
     cursor: pointer;
-    margin: 0;
-    border-bottom: 1px solid rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.1);
+    transition: border-color 0.2s ease;
+}
+
+.message:hover {
+    border-color: rgba(255,255,255,.2);
+}
+
+.message.editing {
+    background-color: #343541;
+    cursor: text;
+    border-color: rgba(255,255,255,.2);
+    padding: 0.75rem;
+    border-radius: 0.875rem;
 }
 
 .message-text {
     white-space: pre-wrap;
     word-break: break-word;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .message-info {
@@ -422,10 +565,15 @@ body {
     font-size: 0.7em;
     margin-top: 4px;
     opacity: 0.8;
+    font-weight: normal;
+    font-style: normal;
+    color: #888;
 }
 
 .message-time {
-    color: rgba(255, 255, 255, 0.9);
+    color: #888;
+    font-weight: normal;
+    font-style: normal;
 }
 
 .message-status {
@@ -433,6 +581,8 @@ body {
     align-items: center;
     font-size: 1em;
     margin-left: 4px;
+    font-weight: normal;
+    font-style: normal;
 }
 
 .message-status.single-tick::after {
@@ -971,60 +1121,238 @@ body {
 .user-info {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px;
-    border-radius: 8px;
-    background: #2a2a2a;
-    margin-bottom: 10px;
     cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.user-info:hover {
+    transform: scale(1.05);
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
-    background: #4a4af4;
+    width: 28px;
+    height: 28px;
+    background: transparent;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    transition: transform 0.2s;
+    color: #64B5F6;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-avatar:hover {
-    transform: scale(1.1);
+    background: rgba(100, 181, 246, 0.1);
+    border-color: #64B5F6;
+}
+
+.user-avatar svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
 }
 
 .user-details {
     flex: 1;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
 .user-email {
-    color: #fff;
-    font-size: 14px;
+    color: #888;
+    font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .auth-btn.logged-in {
-    background-color: #2a2a2a;
-    border: 1px solid #4a4af4;
-    color: #fff;
-    padding: 6px 12px;
-    font-size: 12px;
-    margin: 0;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .auth-btn.logged-in:hover {
-    background-color: #3a3a3a;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.backup-info {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 5px;
+    font-size: 9px;
+    color: #888;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    margin-left: 3px;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.backup-info:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.last-backup {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.message-edit-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.message-edit-textarea {
+    width: 100%;
+    padding: 0;
+    background-color: #343541;
+    border: none;
+    color: #ececf1;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    overflow-y: hidden;
+}
+
+.message-edit-textarea:focus {
+    outline: none;
+}
+
+.message-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.edit-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.edit-btn.cancel {
+    background-color: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ececf1;
+}
+
+.edit-btn.cancel:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.edit-btn.send {
+    background-color: #10a37f;
+    border: none;
+    color: white;
+}
+
+.edit-btn.send:hover {
+    background-color: #0e906f;
+}
+
+.message:hover .message-actions {
+    display: flex;
+    opacity: 1;
+    transform: translateY(-50%);
+}
+
+.message-actions {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 8px);
+    transform: translateY(-50%) translateX(-4px);
+    background: #2A2B32;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    opacity: 0;
+    gap: 4px;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn {
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #ececf1;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.action-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.action-btn i {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Action button icons */
+.action-btn[data-action="copy"] i::before {
+    content: "📋";
+}
+
+.action-btn[data-action="edit"] i::before {
+    content: "✏️";
+}
+
+.action-btn[data-action="delete"] i::before {
+    content: "🗑️";
+}
+
+.action-btn[data-action="ask-ai"] i::before {
+    content: "🤖";
+}
+
+.action-btn[data-action="google"] i::before {
+    content: "🔍";
 }
 
 

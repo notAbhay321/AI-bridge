@@ -2,7 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2024-03-xx
+## [1.2.0.2]
+
+### Added
+- Added CSV export functionality for chat history
+- Added new modern icons throughout the interface
+- Added improved UI formatting to meet Material Design standards
+
+### Changed
+- Renamed extension from "AI-MultiPrompt" to "AI-Bridge" for better branding
+- Reformatted UI elements for better visual hierarchy
+- Enhanced overall user interface aesthetics
+- Improved button and input field styling
+- Simplified extension distribution process
+
+### Removed
+- Removed auto-update functionality in favor of manual updates
+
+## [1.2.1]
+
+### Security
+- Removed exposed Firebase credentials from repository
+- Replaced sensitive data with placeholder values
+- Enhanced security configuration handling
+- Updated documentation for secure credential management
+- Added warning about API key exposure
+- Implemented secure configuration template system
+
+## [1.2.0]
 
 ### Added
 - Added Firebase integration for stable chat storage
@@ -15,7 +42,7 @@ All notable changes to this project will be documented in this file.
 - Optimized chat loading performance
 - Changed keyboard shortcut from Ctrl+Shift+L to Alt+A for better compatibility
 
-## [1.1.1] - 2024-03-xx
+## [1.1.1]
 
 ### Added
 - Added Ctrl+Enter shortcut to send prompts
@@ -36,7 +63,7 @@ All notable changes to this project will be documented in this file.
 - Optimized submission timing for more reliable operation
 - Standardized text input simulation across all AI models
 
-## [1.1.0] - 2024
+## [1.1.0]
 
 ### Changed
 - Converted extension from popup to tab-based interface
@@ -45,13 +72,13 @@ All notable changes to this project will be documented in this file.
 - Repositioned text input field to bottom of tab for improved UX
 - Enhanced overall UI layout
 
-## [1.0.1] - 2024
+## [1.0.1]
 
 ### Changed
 - Configuration updates for local PC compatibility
 - Added proper locale support with _locales structure
 
-## [1.0.0] - 2024
+## [1.0.0]
 
 ### Added
 - Initial release

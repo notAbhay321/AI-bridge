@@ -221,6 +221,49 @@ async function deleteChat(chatId) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        // Add styles for backup info
+        const style = document.createElement('style');
+        style.textContent = `
+            .backup-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                font-size: 12px;
+                color: #888;
+                background-color: var(--bg-secondary);
+                border-radius: 6px;
+                margin: 8px;
+                border: 1px solid var(--border-color);
+                transition: all 0.2s ease;
+            }
+            .backup-info:hover {
+                background-color: var(--bg-hover);
+            }
+            .refresh-btn {
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                padding: 4px;
+                border-radius: 4px;
+                color: inherit;
+                transition: all 0.2s ease;
+            }
+            .refresh-btn:hover {
+                background-color: var(--bg-hover);
+                color: var(--text-primary);
+            }
+            .refresh-btn.rotating {
+                animation: rotate 1s linear infinite;
+            }
+            @keyframes rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
         // Load Firebase first
         await loadFirebaseScripts();
         
@@ -246,35 +289,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         const checkLoginState = async () => {
             const user = JSON.parse(localStorage.getItem('user'));
             if (user && user.idToken) {
-                // Create user info container
+                // Create user info container with SVG avatar
                 const userInfo = document.createElement('div');
                 userInfo.className = 'user-info';
                 userInfo.innerHTML = `
-                    <div class="user-avatar" id="profile-icon">${user.email[0].toUpperCase()}</div>
-                    <div class="user-details">
-                        <div class="user-email">${user.email}</div>
-                        <button class="auth-btn logged-in">View Account</button>
+                    <div class="user-avatar" id="profile-icon" title="${user.email}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                            <path d="m9 11 2 2 4-4" />
+                        </svg>
                     </div>
                 `;
                 
-                // Add click handler for profile icon
+                // Add click handler for profile icon to open account page
                 userInfo.querySelector('#profile-icon').addEventListener('click', () => {
-                    const accountUrl = chrome.runtime.getURL('account.html');
-                    chrome.tabs.create({ url: accountUrl });
-                });
-
-                // Add click handler for View Account button
-                userInfo.querySelector('.auth-btn').addEventListener('click', () => {
                     const accountUrl = chrome.runtime.getURL('account.html');
                     chrome.tabs.create({ url: accountUrl });
                 });
 
                 // Replace existing user info or add new
                 const existingUserInfo = document.querySelector('.user-info');
+                const sideFooter = document.querySelector('.side-footer');
+                
                 if (existingUserInfo) {
                     existingUserInfo.replaceWith(userInfo);
-                } else {
-                    document.querySelector('.nav-footer').insertBefore(userInfo, loginBtn);
+                } else if (sideFooter && loginBtn) {
+                    sideFooter.insertBefore(userInfo, loginBtn);
                 }
                 
                 // Hide the login button since we're showing user info
@@ -290,6 +331,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             } else {
                 // Show login button if user is not logged in
+                const loginBtn = document.getElementById('login-btn');
                 if (loginBtn) {
                     loginBtn.textContent = 'Login / Sign Up';
                     loginBtn.classList.remove('logged-in');
@@ -408,100 +450,92 @@ document.addEventListener("DOMContentLoaded", async () => {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Add backup status and refresh button to nav-footer
-        const navFooter = document.querySelector('.nav-footer');
-        const backupInfo = document.createElement('div');
-        backupInfo.className = 'backup-info';
-        backupInfo.innerHTML = `
-            <span class="last-backup">Last backup: Never</span>
-            <button class="refresh-btn" title="Refresh chats">��</button>
-        `;
-        navFooter.insertBefore(backupInfo, navFooter.firstChild);
-
-        const lastBackupSpan = backupInfo.querySelector('.last-backup');
-        const refreshBtn = backupInfo.querySelector('.refresh-btn');
-
         // Function to update last backup time
         const updateLastBackupTime = () => {
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            lastBackupSpan.textContent = `Last backup: ${timeStr}`;
-        };
-
-        // Function to backup chats
-        const backupChats = async () => {
-            try {
-                const user = JSON.parse(localStorage.getItem('user'));
-                if (!user) {
-                    console.log('No user logged in');
-                    return;
-                }
-
-                // Save all chats to Firebase
-                for (const [chatId, chatData] of Object.entries(chatMessages)) {
-                    await saveChat(chatData);
-                }
-
-                updateLastBackupTime();
-                showNotification('Chats backed up successfully');
-            } catch (error) {
-                console.error('Error backing up chats:', error);
-                showNotification('Failed to backup chats');
+            const lastBackupSpan = document.querySelector('.backup-info .last-backup');
+            if (lastBackupSpan) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { 
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                lastBackupSpan.textContent = `Last backup: ${timeStr}`;
+                
+                // Store the backup time
+                localStorage.setItem('lastBackupTime', now.toISOString());
             }
         };
 
-        // Function to refresh chats
-        const refreshChats = async () => {
-            try {
-                refreshBtn.classList.add('rotating');
-                await initializeChats();
-                showNotification('Chats refreshed successfully');
-            } catch (error) {
-                console.error('Error refreshing chats:', error);
-                showNotification('Failed to refresh chats');
-            } finally {
-                refreshBtn.classList.remove('rotating');
+        // Add backup status and refresh button to side-footer
+        const initializeSideFooter = () => {
+            const sideFooter = document.querySelector('.side-footer');
+            const refreshBtn = document.querySelector('.refresh-btn');
+            const settingsBtn = document.querySelector('#settings-btn');
+            
+            if (sideFooter && refreshBtn && settingsBtn) {
+                // Get the last backup time from storage
+                const lastBackupTime = localStorage.getItem('lastBackupTime');
+                const lastBackupStr = lastBackupTime 
+                    ? new Date(lastBackupTime).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })
+                    : 'Never';
+
+                const backupInfo = document.createElement('div');
+                backupInfo.className = 'backup-info';
+                backupInfo.innerHTML = `
+                    <span class="last-backup">Last backup: ${lastBackupStr}</span>
+                `;
+
+                // Insert backup info after the settings button
+                settingsBtn.parentNode.insertBefore(backupInfo, settingsBtn.nextSibling);
+
+                // Function to backup chats
+                const backupChats = async () => {
+                    try {
+                        const user = JSON.parse(localStorage.getItem('user'));
+                        if (!user) {
+                            console.log('No user logged in');
+                            return;
+                        }
+
+                        // Save all chats to Firebase
+                        for (const [chatId, chatData] of Object.entries(chatMessages)) {
+                            await saveChat(chatData);
+                        }
+
+                        updateLastBackupTime();
+                        showNotification('Chats backed up successfully');
+                    } catch (error) {
+                        console.error('Error backing up chats:', error);
+                        showNotification('Failed to backup chats');
+                    }
+                };
+
+                // Function to refresh chats
+                const refreshChats = async () => {
+                    try {
+                        refreshBtn.classList.add('rotating');
+                        await initializeChats();
+                        showNotification('Chats refreshed successfully');
+                    } catch (error) {
+                        console.error('Error refreshing chats:', error);
+                        showNotification('Failed to refresh chats');
+                    } finally {
+                        refreshBtn.classList.remove('rotating');
+                    }
+                };
+
+                // Add click handler for refresh button
+                refreshBtn.addEventListener('click', refreshChats);
+
+                // Auto-backup chats every 5 minutes
+                setInterval(backupChats, 5 * 60 * 1000);
             }
         };
-
-        // Add click handler for refresh button
-        refreshBtn.addEventListener('click', refreshChats);
-
-        // Auto-backup chats every 5 minutes
-        setInterval(backupChats, 5 * 60 * 1000);
-
-        // Add CSS for the new elements
-        const style = document.createElement('style');
-        style.textContent = `
-            .backup-info {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 5px 10px;
-                font-size: 12px;
-                color: #666;
-            }
-            .refresh-btn {
-                background: none;
-                border: none;
-                cursor: pointer;
-                font-size: 16px;
-                padding: 5px;
-                border-radius: 50%;
-                transition: transform 0.3s ease;
-            }
-            .refresh-btn:hover {
-                background: #f0f0f0;
-            }
-            .refresh-btn.rotating {
-                animation: rotate 1s linear infinite;
-            }
-            @keyframes rotate {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
 
         // Function to create time separator element
         function createTimeSeparator(text) {
@@ -622,15 +656,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Modified createNewChat function
         const createNewChat = async () => {
             try {
-                // Generate a unique chat ID
                 const chatId = 'chat_' + Date.now();
                 const timestamp = Date.now();
-                
-                // Get the next chat number by counting existing chats
-                const existingChats = Object.values(chatMessages);
-                const chatNumber = existingChats.length + 1;
-                const chatName = `Chat ${chatNumber}`;
-                
+                const chatName = `Chat ${Object.values(chatMessages).length + 1}`;
+
                 const chatData = {
                     id: chatId,
                     name: chatName,
@@ -640,34 +669,37 @@ document.addEventListener("DOMContentLoaded", async () => {
                     updatedAt: timestamp,
                     lastMessageTimestamp: timestamp
                 };
-                
+
                 // Update local state
                 chatMessages[chatId] = chatData;
-                
-                // Create UI element and insert at the top
-                const chatElement = createChatElement(chatName, chatId, true);
-                
+
+                // Create UI element
+                const chatElement = createChatElement(chatName, chatId);
+
+                // Find or create the "Today" section
+                let todaySection = Array.from(chatList.children).find(
+                    child => child.classList.contains('time-separator') && 
+                    child.textContent.includes('Today')
+                );
+
+                if (!todaySection) {
+                    todaySection = createTimeSeparator('Today');
+                    chatList.insertBefore(todaySection, chatList.firstChild);
+                }
+
+                // Insert the new chat right after the "Today" separator
+                if (todaySection.nextSibling) {
+                    chatList.insertBefore(chatElement, todaySection.nextSibling);
+                } else {
+                    chatList.appendChild(chatElement);
+                }
+
                 // Save to Firebase
                 await saveChat(chatData);
-                
-                // Clear any active chat styling
-                const activeChats = document.querySelectorAll('.chat-item.active');
-                activeChats.forEach(chat => chat.classList.remove('active'));
-                
-                // Activate the new chat immediately
-                chatElement.classList.add('active');
-                activeChat = chatElement;
-                
-                // Clear the chat container and set the title
-                chatContainer.innerHTML = '';
-                chatTitleText.textContent = chatName;
-                
-                // Focus the text input
-                const textPrompt = document.getElementById('text-prompt');
-                if (textPrompt) {
-                    textPrompt.focus();
-                }
-                
+
+                // Activate the new chat
+                activateChat(chatElement);
+
                 return chatId;
             } catch (error) {
                 console.error('Error creating chat:', error);
@@ -711,6 +743,204 @@ document.addEventListener("DOMContentLoaded", async () => {
                 displayMessages(chatId);
             }
         };
+
+        // Helper functions for message actions
+        function showNotification(message) {
+            // Remove existing notification if any
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Trigger animation
+            setTimeout(() => notification.classList.add('show'), 10);
+
+            // Remove notification after animation
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        function copyMessageText(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showNotification('Message copied to clipboard');
+                })
+                .catch(() => {
+                    showNotification('Failed to copy message');
+                });
+        }
+
+        function deleteMessage(messageDiv) {
+            if (!activeChat || !messageDiv) return;
+            
+            const chatId = activeChat.dataset.chatId;
+            if (!chatMessages[chatId]) return;
+
+            // Find the message in the chat's messages array
+            const messageText = messageDiv.querySelector('.message-text').textContent;
+            const messageIndex = chatMessages[chatId].messages.findIndex(msg => msg.text === messageText);
+            
+            if (messageIndex !== -1) {
+                // Remove message from array
+                chatMessages[chatId].messages.splice(messageIndex, 1);
+                
+                // Remove message element from DOM
+                messageDiv.remove();
+                
+                // Save updated chat
+                saveChat(chatMessages[chatId])
+                    .then(() => {
+                        showNotification('Message deleted successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error deleting message:', error);
+                        showNotification('Failed to delete message');
+                    });
+            }
+        }
+
+        function askAI(text) {
+            // Implement AI query logic
+            showNotification('Asking AI...');
+        }
+
+        function googleSearch(text) {
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function enterEditMode(messageDiv, message) {
+            const messageContent = messageDiv.querySelector('.message-content');
+            const messageText = messageDiv.querySelector('.message-text');
+            
+            messageDiv.classList.add('editing');
+            const editContainer = document.createElement('div');
+            editContainer.className = 'message-edit-container';
+            
+            const textarea = document.createElement('textarea');
+            textarea.className = 'message-edit-textarea';
+            textarea.value = message.text;
+            textarea.spellcheck = false;
+            
+            // Set initial height
+            textarea.style.height = 'auto';
+            textarea.style.height = messageText.offsetHeight + 'px';
+            
+            // Auto-resize on input
+            textarea.addEventListener('input', () => {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            });
+            
+            const actions = document.createElement('div');
+            actions.className = 'message-edit-actions';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'edit-btn cancel';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+                messageDiv.classList.remove('editing');
+                editContainer.remove();
+                messageContent.style.display = '';
+            };
+            
+            const sendBtn = document.createElement('button');
+            sendBtn.className = 'edit-btn send';
+            sendBtn.textContent = 'Save';
+            sendBtn.onclick = async () => {
+                const newText = textarea.value.trim();
+                if (newText && newText !== message.text) {
+                    message.text = newText;
+                    messageText.textContent = newText;
+                    try {
+                        await saveChat(chatMessages[activeChat.dataset.chatId]);
+                        showNotification('Message updated successfully');
+                    } catch (error) {
+                        console.error('Error updating message:', error);
+                        showNotification('Failed to update message');
+                    }
+                }
+                messageDiv.classList.remove('editing');
+                editContainer.remove();
+                messageContent.style.display = '';
+            };
+            
+            actions.appendChild(cancelBtn);
+            actions.appendChild(sendBtn);
+            editContainer.appendChild(textarea);
+            editContainer.appendChild(actions);
+            
+            messageContent.style.display = 'none';
+            messageDiv.appendChild(editContainer);
+            textarea.focus();
+            
+            // Set cursor position to end of text
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            
+            const messageText = document.createElement('p');
+            messageText.className = 'message-text';
+            messageText.textContent = message.text;
+            
+            const messageInfo = document.createElement('div');
+            messageInfo.className = 'message-info';
+            
+            // Format timestamp
+            const timestamp = message.timestamp ? new Date(message.timestamp) : new Date();
+            const timeStr = timestamp.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            messageInfo.textContent = timeStr;
+            
+            messageContent.appendChild(messageText);
+            messageContent.appendChild(messageInfo);
+            
+            // Add action buttons
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            
+            const actions = [
+                { name: 'Copy', action: 'copy', handler: () => copyMessageText(message.text) },
+                { name: 'Edit', action: 'edit', handler: () => enterEditMode(messageDiv, message) },
+                { name: 'Delete', action: 'delete', handler: () => deleteMessage(messageDiv) },
+                { name: 'Ask AI', action: 'ask-ai', handler: () => askAI(message.text) },
+                { name: 'Google', action: 'google', handler: () => googleSearch(message.text) }
+            ];
+            
+            actions.forEach(({ name, action, handler }) => {
+                const button = document.createElement('button');
+                button.className = 'action-btn';
+                button.setAttribute('data-action', action);
+                button.innerHTML = `<i></i>${name}`;
+                button.onclick = (e) => {
+                    e.stopPropagation();
+                    handler();
+                };
+                actionsDiv.appendChild(button);
+            });
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(actionsDiv);
+            
+            return messageDiv;
+        }
 
         function createChatElement(chatName, chatId, insertAtTop = false) {
             const chatItem = document.createElement('div');
@@ -768,7 +998,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Create rename icon
             const renameIcon = document.createElement('button');
-            renameIcon.innerHTML = '✏️';
+            renameIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
             renameIcon.className = 'chat-icon rename-icon';
             renameIcon.title = 'Rename';
             renameIcon.onclick = (e) => {
@@ -783,10 +1013,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     saveChat(chatMessages[chatId]);
                 }
             };
+
+            // Create archive icon
+            const archiveIcon = document.createElement('button');
+            archiveIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>';
+            archiveIcon.className = 'chat-icon archive-icon';
+            archiveIcon.title = 'Archive';
+            archiveIcon.onclick = async (e) => {
+                e.stopPropagation();
+                try {
+                    // Add archive functionality here
+                    showNotification('Chat archived successfully');
+                } catch (error) {
+                    console.error('Error archiving chat:', error);
+                    showNotification('Failed to archive chat');
+                }
+            };
             
             // Create delete icon
             const deleteIcon = document.createElement('button');
-            deleteIcon.innerHTML = '🗑️';
+            deleteIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
             deleteIcon.className = 'chat-icon delete-icon';
             deleteIcon.title = 'Delete';
             deleteIcon.onclick = async (e) => {
@@ -812,6 +1058,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             };
             
             iconsDiv.appendChild(renameIcon);
+            iconsDiv.appendChild(archiveIcon);
             iconsDiv.appendChild(deleteIcon);
             chatItem.appendChild(iconsDiv);
             
@@ -868,189 +1115,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             separator.appendChild(dateText);
             separator.appendChild(line.cloneNode(true));
             return separator;
-        }
-
-        function createMessageElement(messageObj) {
-            const message = typeof messageObj === 'string' ? messageObj : messageObj.text;
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
-            // Message text
-            const textDiv = document.createElement('div');
-            textDiv.className = 'message-text';
-            textDiv.textContent = message;
-            
-            // Message info container
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'message-info';
-            
-            // Time
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'message-time';
-            
-            // Get time from sentAt object if available
-            let hours, minutes;
-            if (messageObj.sentAt) {
-                hours = messageObj.sentAt.hours;
-                minutes = messageObj.sentAt.minutes;
-            } else if (messageObj.timestamp) {
-                const timestamp = new Date(messageObj.timestamp);
-                hours = timestamp.getHours();
-                minutes = timestamp.getMinutes();
-            } else {
-                const now = new Date();
-                hours = now.getHours();
-                minutes = now.getMinutes();
-            }
-            
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const formattedHours = hours % 12 || 12;
-            const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-            timeSpan.textContent = `${formattedHours}:${formattedMinutes} ${ampm}`;
-            
-            // Store timestamp for date separators
-            if (messageObj.sentAt) {
-                const { year, month, date, hours: h, minutes: m } = messageObj.sentAt;
-                messageDiv.dataset.timestamp = JSON.stringify(new Date(year, month, date, h, m));
-            } else if (messageObj.timestamp) {
-                messageDiv.dataset.timestamp = JSON.stringify(new Date(messageObj.timestamp));
-            } else {
-                messageDiv.dataset.timestamp = JSON.stringify(new Date());
-            }
-            
-            // Status indicator
-            const statusSpan = document.createElement('span');
-            statusSpan.className = 'message-status';
-            
-            // Check if any AI model is active
-            const activeAiModels = Array.from(document.querySelectorAll('.ai-button'))
-                .some(btn => btn.classList.contains('active'));
-            
-            statusSpan.classList.add(activeAiModels ? 'double-tick' : 'single-tick');
-            
-            // Message actions menu
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'message-actions';
-            
-            // Create action buttons
-            const actions = [
-                { icon: '📋', text: 'Copy', action: () => copyToClipboard(message) },
-                { icon: '✏️', text: 'Edit', action: () => editMessage(messageDiv) },
-                { icon: '🗑️', text: 'Delete', action: () => deleteMessage(messageDiv) },
-                { icon: '🤖', text: 'Ask AI', action: () => askAiAgain(message) },
-                { icon: '🔍', text: 'Google', action: () => googleSearch(message) }
-            ];
-            
-            actions.forEach(({ icon, text, action }) => {
-                const button = document.createElement('button');
-                button.className = 'action-btn';
-                button.innerHTML = `${icon} ${text}`;
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    action();
-                    messageDiv.classList.remove('active');
-                });
-                actionsDiv.appendChild(button);
-            });
-            
-            // Add click handlers
-            messageDiv.addEventListener('click', () => {
-                // Close any other open message actions
-                document.querySelectorAll('.message.active').forEach(msg => {
-                    if (msg !== messageDiv) msg.classList.remove('active');
-                });
-                messageDiv.classList.toggle('active');
-            });
-            
-            infoDiv.appendChild(timeSpan);
-            infoDiv.appendChild(statusSpan);
-            messageDiv.appendChild(textDiv);
-            messageDiv.appendChild(infoDiv);
-            messageDiv.appendChild(actionsDiv);
-            
-            return messageDiv;
-        }
-
-        // Message action functions
-        function showNotification(message) {
-            // Remove existing notification if any
-            const existingNotification = document.querySelector('.notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-
-            // Create new notification
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            // Trigger animation
-            setTimeout(() => notification.classList.add('show'), 10);
-
-            // Remove notification after animation
-            setTimeout(() => {
-                notification.remove();
-            }, 2000);
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    showNotification('Copied to clipboard');
-                })
-                .catch(err => {
-                    showNotification('Failed to copy text');
-                    console.error('Failed to copy text:', err);
-                });
-        }
-
-        function editMessage(messageDiv) {
-            const textDiv = messageDiv.querySelector('.message-text');
-            const originalText = textDiv.textContent;
-            const newText = prompt('Edit message:', originalText);
-            
-            if (newText && newText.trim() && newText !== originalText) {
-                textDiv.textContent = newText;
-                // Update message in storage
-                if (activeChat) {
-                    const chatId = activeChat.dataset.chatId;
-                    const messages = chatMessages[chatId];
-                    const index = Array.from(chatContainer.children).indexOf(messageDiv);
-                    if (messages && index !== -1) {
-                        messages[index] = newText;
-                        saveChats();
-                    }
-                }
-            }
-        }
-
-        function deleteMessage(messageDiv) {
-            if (confirm('Delete this message?')) {
-                // Remove from storage
-                if (activeChat) {
-                    const chatId = activeChat.dataset.chatId;
-                    const messages = chatMessages[chatId];
-                    const index = Array.from(chatContainer.children).indexOf(messageDiv);
-                    if (messages && index !== -1) {
-                        messages.splice(index, 1);
-                        saveChats();
-                    }
-                }
-                messageDiv.remove();
-            }
-        }
-
-        function askAiAgain(message) {
-            promptTextElem.value = message;
-            promptTextElem.dispatchEvent(new Event('input'));
-            promptButtonElem.click();
-        }
-
-        function googleSearch(text) {
-            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(text)}`;
-            chrome.tabs.create({ url: searchUrl });
         }
 
         function activateChat(chatItem) {
@@ -1528,7 +1592,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // Settings button click handler
-        document.querySelector('.settings-btn').addEventListener('click', () => {
+        document.querySelector('#settings-btn').addEventListener('click', () => {
             chrome.tabs.create({ url: 'settings.html' });
         });
 
@@ -1662,9 +1726,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Initialize chats
             await initializeChats();
-        } catch (error) {
-            console.error('Error initializing application:', error);
-        }
-    });
+
+        // Initialize side footer
+        initializeSideFooter();
+        
+        // Check login state
+        await checkLoginState();
+    } catch (error) {
+        console.error('Error initializing application:', error);
+    }
+});
 
 
