@@ -18,25 +18,22 @@
 <body>
     <div class="app-container">
         <!-- Side Navigation -->
-        <nav class="side-nav">
+        <div class="nav-container">
             <div class="nav-header">
                 <h3 class="glitch" data-text="AI-Bridge">
                     <span data-text="A">A</span><span data-text="I">I</span><span data-text="-">-</span><span data-text="B">B</span><span data-text="R">R</span><span data-text="I">I</span><span data-text="D">D</span><span data-text="G">G</span><span data-text="E">E</span>
                 </h3>
-                <span class="version">v1.2.0.3</span>
+                <span class="version">v1.2.0.4</span>
             </div>
             <div class="nav-content">
-                <button class="new-chat-btn" id="new-chat-btn">New Chat</button>
+                <button class="new-chat-btn" id="new-chat-btn">New Chat <span class="shortcut-hint">[Alt+I]</span></button>
                 <div class="chat-list" id="chat-list">
                     <!-- Chat items will be added dynamically -->
                 </div>
             </div>
             <div class="side-footer">
                 <button class="icon-btn login-icon" id="login-btn" data-tooltip="Sign in">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
+                    <img src="icons/profile-icon.png" alt="Profile" style="width: 20px; height: 20px;">
                 </button>
                 <button class="icon-btn refresh-btn" data-tooltip="Click to refresh the chat">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -57,7 +54,42 @@
                     </svg>
                 </button>
             </div>
-        </nav>
+            
+            <div class="profile-section">
+                <div class="profile-button" id="profile-button">
+                    <img src="icons/profile-icon.png" alt="Profile" class="profile-image">
+                    <div class="profile-info">
+                        <span class="profile-name">My Profile</span>
+                        <div class="backup-info">
+                            <span>Last backup: 9:02 PM</span>
+                            <svg class="refresh-icon" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile drop-up menu -->
+                <div class="profile-dropdown" id="profile-dropdown">
+                    <div class="profile-header" id="profile-header">Hey user, please login</div>
+                    <div class="dropdown-item" id="sign-in-btn">
+                        <span>👤 Sign in</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span>⚙️ Settings</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span>🔄 Delete all chats</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span>✉️ Contact us</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span>↪️ Log out</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <main class="main-content">

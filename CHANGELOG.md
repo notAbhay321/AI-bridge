@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0.4] - 2024-03-19
+
+### Added
+- Enhanced UI improvements for chat interface
+  - Added centered chat headers with proper alignment
+  - Implemented floating border design around chat section
+  - Added background image to main content area
+  - Improved chat container positioning to right side
+  - Added semi-transparent overlays with blur effects
+  - Centered time period headers (Previous 30 Days, Yesterday)
+  - Added decorative divider lines between chat sections
+
+### Changed
+- Improved chat container styling
+  - Updated border colors and opacity
+  - Added backdrop blur effects for better readability
+  - Adjusted spacing and margins for better visual hierarchy
+  - Improved responsive layout and alignment
+
+### Fixed
+- Chat section alignment and spacing issues
+- Time period headers centering
+- Background image integration with proper overlay
+- Chat container border consistency
+
 ## [1.2.0.3]
 
 ### Added

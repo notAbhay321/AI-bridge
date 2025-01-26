@@ -286,15 +286,66 @@ document.addEventListener("DOMContentLoaded", async () => {
         const allAiToggle = document.getElementById('all-ai');
         const loginBtn = document.getElementById('login-btn');
 
+        // Add global Ctrl+V handler
+        window.addEventListener('keydown', async (e) => {
+            // Check if Ctrl+V is pressed and text input is not focused
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V') && document.activeElement !== promptTextElem) {
+                e.preventDefault(); // Prevent default paste behavior
+                
+                try {
+                    // Focus the text input first
+                    promptTextElem.focus();
+                    
+                    // Get text from clipboard
+                    const clipboardText = await navigator.clipboard.readText();
+                    
+                    // Set the value and trigger input event
+                    promptTextElem.value = clipboardText;
+                    promptTextElem.dispatchEvent(new Event('input'));
+                } catch (error) {
+                    console.error('Failed to paste:', error);
+                    showNotification('Failed to paste from clipboard');
+                }
+            }
+        });
+
         // Check if user is logged in
         const checkLoginState = async () => {
             const user = JSON.parse(localStorage.getItem('user'));
             const loginBtn = document.getElementById('login-btn');
+            const profileHeader = document.getElementById('profile-header');
+            const profileDropdown = document.getElementById('profile-dropdown');
 
             // Always ensure login button exists and is styled correctly
             if (loginBtn) {
                 if (user && user.idToken) {
                     // User is logged in
+                    if (profileHeader) {
+                        profileHeader.textContent = user.email || 'My Profile';
+                    }
+                    
+                    // Update dropdown items for logged-in state
+                    if (profileDropdown) {
+                        profileDropdown.innerHTML = `
+                            <div class="profile-header" id="profile-header">${user.email || 'My Profile'}</div>
+                            <div class="dropdown-item">
+                                <span>⚙️ Settings</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>🔄 Delete all chats</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>📦 Archive chat</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>✉️ Contact us</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>↪️ Log out</span>
+                            </div>
+                        `;
+                    }
+                    
                     // Create user info container with SVG avatar
                     const userInfo = document.createElement('div');
                     userInfo.className = 'user-info';
@@ -335,6 +386,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 } else {
                     // User is not logged in
+                    if (profileHeader) {
+                        profileHeader.textContent = 'Hey user, please login';
+                    }
+                    
+                    // Update dropdown items for logged-out state
+                    if (profileDropdown) {
+                        profileDropdown.innerHTML = `
+                            <div class="profile-header" id="profile-header">Hey user, please login</div>
+                            <div class="dropdown-item" id="sign-in-btn">
+                                <span>👤 Sign in</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>⚙️ Settings</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <span>✉️ Contact us</span>
+                            </div>
+                        `;
+                    }
+                    
                     // Show and style login button
                     loginBtn.style.display = 'flex';
                     loginBtn.classList.remove('logged-in');
@@ -1220,6 +1291,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (e.key === 'Delete' && activeChat) {
                     await deleteCurrentChat();
                 }
+                // Add Alt+I shortcut for new chat
+                if (e.key === 'i' && e.altKey) {
+                    e.preventDefault(); // Prevent default browser behavior
+                    await createNewChat();
+                }
             });
 
         newChatBtn.addEventListener('click', createNewChat);
@@ -1755,6 +1831,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                     
                     showNotification('Chat exported successfully');
                     break;
+
+                case '📦 Archive chat':
+                    if (activeChat) {
+                        const chatId = activeChat.dataset.chatId;
+                        const chatData = chatMessages[chatId];
+                        if (chatData) {
+                            try {
+                                // Add archived flag to chat data
+                                chatData.archived = true;
+                                // Save to Firebase
+                                await saveChat(chatData);
+                                // Remove from current view
+                                activeChat.remove();
+                                delete chatMessages[chatId];
+                                showNotification('Chat archived successfully');
+                            } catch (error) {
+                                console.error('Error archiving chat:', error);
+                                showNotification('Failed to archive chat');
+                            }
+                        }
+                    } else {
+                        showNotification('Please select a chat to archive');
+                    }
+                    break;
             }
 
             chatDropdown.classList.remove('show');
@@ -1768,6 +1868,98 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // Check login state
         await checkLoginState();
+
+        // Initialize profile dropdown functionality
+        const profileButton = document.getElementById('profile-button');
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        if (profileButton && profileDropdown) {
+            // Toggle dropdown when clicking profile button
+            profileButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileDropdown.contains(e.target) && !profileButton.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+
+            // Handle dropdown item clicks
+            profileDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const action = e.currentTarget.querySelector('span').textContent.trim();
+                    
+                    switch (action) {
+                        case '👤 Sign in':
+                            // Open auth.html in popup view
+                            const authUrl = chrome.runtime.getURL('auth.html');
+                            chrome.windows.create({
+                                url: authUrl,
+                                type: 'popup',
+                                width: 400,
+                                height: 600,
+                                left: Math.round((screen.width - 400) / 2),
+                                top: Math.round((screen.height - 600) / 2)
+                            });
+                            break;
+                        case '⚙️ Settings':
+                            chrome.tabs.create({ url: 'settings.html' });
+                            break;
+                        case '🔄 Delete all chats':
+                            if (confirm('Are you sure you want to delete all chats?')) {
+                                // Clear chat list and messages
+                                chatList.innerHTML = '';
+                                chatMessages = {};
+                                // Create a new welcome chat
+                                createNewChat();
+                            }
+                            break;
+                        case '📦 Archive chat':
+                            if (activeChat) {
+                                const chatId = activeChat.dataset.chatId;
+                                const chatData = chatMessages[chatId];
+                                if (chatData) {
+                                    try {
+                                        // Add archived flag to chat data
+                                        chatData.archived = true;
+                                        // Save to Firebase
+                                        await saveChat(chatData);
+                                        // Remove from current view
+                                        activeChat.remove();
+                                        delete chatMessages[chatId];
+                                        showNotification('Chat archived successfully');
+                                    } catch (error) {
+                                        console.error('Error archiving chat:', error);
+                                        showNotification('Failed to archive chat');
+                                    }
+                                }
+                            } else {
+                                showNotification('Please select a chat to archive');
+                            }
+                            break;
+                        case '✉️ Contact us':
+                            window.open('mailto:support@ai-bridge.com', '_blank');
+                            break;
+                        case '↪️ Log out':
+                            const user = JSON.parse(localStorage.getItem('user'));
+                            if (user) {
+                                // Clear user data
+                                localStorage.removeItem('user');
+                                // Update UI
+                                checkLoginState();
+                                showNotification('Logged out successfully');
+                            }
+                            break;
+                    }
+                    
+                    profileDropdown.classList.remove('show');
+                });
+            });
+        }
     } catch (error) {
         console.error('Error initializing application:', error);
     }
@@ -1810,6 +2002,8 @@ updateLoginButtonTooltip();
 const checkLoginState = async () => {
     const user = JSON.parse(localStorage.getItem('user'));
     const loginBtn = document.getElementById('login-btn');
+    const profileHeader = document.getElementById('profile-header');
+    const profileDropdown = document.getElementById('profile-dropdown');
 
     if (loginBtn) {
         if (user && user.idToken) {
