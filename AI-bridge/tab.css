@@ -20,7 +20,7 @@ body {
 /* Side Navigation Styles */
 .side-nav {
     width: 260px;
-    background-color: #202123;
+    background-color: #161617;
     display: flex;
     flex-direction: column;
     border-right: 1px solid rgba(255,255,255,0.1);
@@ -58,15 +58,11 @@ body {
 
 .side-footer {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    gap: 4px;
-    padding: 6px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: #202123;
-    flex-wrap: wrap;
-    min-height: 40px;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background-color: #161617;
 }
 
 .new-chat-btn {
@@ -254,37 +250,41 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Settings and utility buttons */
 .icon-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    cursor: pointer;
-    color: #ececf1;
-    padding: 3px;
-    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    position: relative;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: #ececf1;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.icon-btn svg {
-    width: 14px;
-    height: 14px;
+    background-color: #2A2B32;
 }
 
 /* Default state (logged out) */
+.login-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+    cursor: pointer;
+}
+
 .login-icon svg {
     color: #ef4146;
     opacity: 1;
+    width: 16px;
+    height: 16px;
 }
 
 /* Logged in state */
@@ -297,6 +297,11 @@ body {
 .login-icon, 
 .login-icon.logged-in {
     opacity: 1;
+    visibility: visible;
+}
+
+.login-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .login-icon:hover svg {
@@ -318,15 +323,15 @@ body {
 /* Remove any potential tooltip or text display */
 [title],
 [data-tooltip] {
-    font-size: 0;
-    text-indent: -9999px;
+    font-size: initial;
+    text-indent: initial;
 }
 
 .settings-btn {
     width: 100%;
     padding: 6px 8px;
-    background-color: transparent;
-    color: #888;
+    background-color: #2e2e2f;
+    color: #ececf1;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     cursor: pointer;
@@ -335,8 +340,8 @@ body {
 }
 
 .settings-btn:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    background-color: #343541;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Main Content Styles */
@@ -349,80 +354,247 @@ body {
 
 /* Bottom Controls Styles */
 .bottom-controls {
-    background-color: #2a2a2a;
-    border-top: 1px solid #3a3a3a;
+    background-color: transparent;
+    border-top: none;
 }
 
 .toggle-container {
-    padding: 15px 20px 5px 20px;
+    position: fixed;
+    bottom: 80px;
+    left: 280px;
+    right: 20px;
+    padding: 12px 20px;
     display: flex;
-    gap: 10px;
+    flex-direction: row;
     flex-wrap: wrap;
-    border-bottom: none;
+    gap: 16px;
+    background: transparent;
+    z-index: 99;
+    justify-content: flex-start;
+    align-items: center;
 }
 
-.toggle {
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: #f44336;  /* Default red state */
-    color: #fff;
+.ai-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+.ai-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(42, 43, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    margin: 0;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9em;
-    border: 1px solid #da190b;
-    font-weight: bold;
+    isolation: isolate;
+    z-index: 1;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.toggle:hover {
-    background-color: #da190b;
+.ai-button:not(.active):hover {
+    background: rgba(52, 53, 65, 0.98);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Active (checked) state */
-.toggle[checked], 
-.toggle.active {
-    background-color: #4CAF50;  /* Green when active */
-    border-color: #45a049;
+.ai-button.active {
+    background: rgba(62, 63, 75, 0.98);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 0 12px rgba(255, 255, 255, 0.1);
 }
 
-.toggle[checked]:hover,
-.toggle.active:hover {
-    background-color: #45a049;
+.ai-button img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.all-ai-toggle {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(62, 63, 75, 0.95), rgba(82, 83, 95, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.all-ai-toggle:hover {
+    background: linear-gradient(135deg, rgba(72, 73, 85, 0.98), rgba(92, 93, 105, 0.98));
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+/* Ensure no interference between buttons */
+.ai-button *,
+.all-ai-toggle * {
+    pointer-events: none;
+}
+
+/* Remove any transforms or animations */
+.ai-button,
+.ai-button:hover,
+.ai-button.active,
+.ai-button img,
+.all-ai-toggle,
+.all-ai-toggle:hover {
+    transform: none !important;
+    transition: none !important;
+}
+
+/* Remove tooltips */
+.ai-button::after,
+.ai-button:hover::after,
+.all-ai-toggle::after,
+.all-ai-toggle:hover::after {
+    display: none !important;
 }
 
 .input-container {
-    padding: 15px 20px 20px 20px;
+    position: fixed;
+    bottom: 0;
+    left: 260px;
+    right: 0;
+    padding: 20px;
     display: flex;
-    gap: 10px;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom, transparent, #212121 20%);
+    z-index: 100;
 }
 
 #text-prompt {
-    flex: 1;
-    min-height: 50px;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #3a3a3a;
-    background-color: #1a1a1a;
-    color: #fff;
-    resize: none;
+    width: 100%;
+    min-height: 24px;
+    max-height: 200px;
+    padding: 12px 45px 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background-color: #2e2e2f;
+    color: #ececf1;
     font-family: inherit;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    transition: all 0.3s ease;
+}
+
+#text-prompt:hover {
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 #text-prompt:focus {
-    border-color: #4a4af4;
     outline: none;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2),
-                0 0 5px rgba(74, 74, 244, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Modern Send Button Style */
+#text-prompt::placeholder {
+    color: rgba(236, 236, 241, 0.5);
+}
+
+#submit-prompt {
+    position: absolute;
+    right: 32px;
+    bottom: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: #ececf1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+    border-radius: 6px;
+}
+
+#submit-prompt:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+#submit-prompt:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+#submit-prompt svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    transform: rotate(-90deg);
+}
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    background-color: #212121;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    padding-bottom: 160px;
+    margin-bottom: 0;
+    max-height: calc(100vh - 160px);
+}
+
+.input-icons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon {
+    font-size: 12px;
+    color: rgba(236, 236, 241, 0.7);
+    background-color: rgba(236, 236, 241, 0.1);
+    padding: 6px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.icon:hover {
+    background-color: rgba(236, 236, 241, 0.2);
+    color: rgba(236, 236, 241, 0.9);
+    transform: translateY(-1px);
+}
+
+/* Submit button */
 #submit-prompt {
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    border: 1px solid #3a3a3a;
-    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #2e2e2f;
     color: #fff;
     cursor: pointer;
     display: flex;
@@ -432,13 +604,13 @@ body {
 }
 
 #submit-prompt:hover {
-    border-color: #4a4af4;
-    background: #3a3a3a;
+    background: #343541;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 #submit-prompt:disabled {
     background: #1a1a1a;
-    border-color: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.05);
     cursor: not-allowed;
     opacity: 0.5;
 }
@@ -497,77 +669,155 @@ body {
     animation: sendSuccess 0.5s ease forwards;
 }
 
-/* Update chat container to fill remaining space */
-.chat-container {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px;
-    background-color: #343541;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    align-items: flex-end;
-}
-
 .message {
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: 2rem;
+    position: relative;
+    padding: 6px 8px;
+    margin: 2px 15px;
+    border-radius: 8px;
+    max-width: 85%;
     width: fit-content;
     min-width: 40px;
-    background-color: #343541;
-    padding: 0.75rem 1rem;
-    border-radius: 0.875rem;
+    line-height: 1.4;
+    font-size: 14px;
     color: #ececf1;
-    animation: fadeIn 0.3s ease;
-    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    margin-left: auto;
     cursor: pointer;
-    border: 1px solid rgba(255,255,255,.1);
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .message:hover {
-    border-color: rgba(255,255,255,.2);
-}
-
-.message.editing {
     background-color: #343541;
-    cursor: text;
-    border-color: rgba(255,255,255,.2);
-    padding: 0.75rem;
-    border-radius: 0.875rem;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
-.message-text {
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 1rem;
-    line-height: 1.5;
-    margin: 0;
-    padding: 0;
+.message-actions {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 8px);
+    transform: translateY(-50%);
+    background: #2A2B32;
+    border-radius: 8px;
+    padding: 4px;
+    display: none;
+    flex-direction: column;
+    min-width: 120px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+}
+
+/* Improved hover bridge */
+.message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 100%;
+    width: 16px;
+    height: 100%;
+    background: transparent;
+}
+
+/* Show actions only when hovering the message or its menu */
+.message:hover .message-actions,
+.message-actions:hover {
+    display: flex;
+}
+
+/* Prevent hover interference */
+.message:not(:hover) .message-actions:not(:hover) {
+    display: none;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: #ececf1;
+    font-size: 13px;
     text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.message.user-message {
+    background-color: #2e2e2f;
+    border-top-right-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message.ai-message {
+    background-color: #2e2e2f;
+    border-top-right-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .message-content {
+    position: relative;
+    z-index: 1;
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.message-text {
+    margin: 0;
+    padding: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    flex: 1;
 }
 
 .message-info {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 4px;
-    font-size: 0.7em;
-    margin-top: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    margin-left: 4px;
+    margin-bottom: 0;
+    flex-shrink: 0;
     opacity: 0.8;
-    font-weight: normal;
-    font-style: normal;
-    color: #888;
+}
+
+/* Message tails */
+.message.user-message::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #2e2e2f;
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    transform: rotate(-45deg);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message.ai-message::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #2e2e2f;
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    transform: rotate(-45deg);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .message-time {
@@ -616,12 +866,14 @@ body {
 }
 
 .all-ai-toggle {
-    background-color: #2d2d4d;
-    border: 1px solid #4a4af4;
+    background: linear-gradient(135deg, #2A2B32, #343541);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
 }
 
 .all-ai-toggle:hover {
-    background-color: #3d3d6d;
+    background: linear-gradient(135deg, #343541, #3E3F4B);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .all-ai-toggle.active {
@@ -985,51 +1237,6 @@ body {
     gap: 1rem;
 }
 
-.message-actions {
-    position: absolute;
-    top: 50%;
-    right: 100%;
-    transform: translateY(-50%);
-    background: #2a2a2a;
-    border-radius: 8px;
-    margin-right: 8px;
-    display: none;
-    padding: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 100;
-    flex-direction: row;
-    gap: 4px;
-    white-space: nowrap;
-}
-
-.message.active .message-actions {
-    display: flex;
-}
-
-.action-btn {
-    padding: 6px 8px;
-    background: #3a3a3a;
-    border: none;
-    border-radius: 4px;
-    color: #fff;
-    font-size: 0.75em;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-}
-
-.action-btn:hover {
-    background: #4a4a4a;
-}
-
-.action-btn i {
-    font-size: 1em;
-    opacity: 0.9;
-}
-
 .notification {
     position: fixed;
     bottom: 20px;
@@ -1200,28 +1407,22 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* Backup info styles */
 .backup-info {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 3px;
-    padding: 3px 5px;
-    font-size: 9px;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
     color: #888;
-    background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+    border-radius: 6px;
     transition: all 0.2s ease;
-    margin-left: 3px;
-    white-space: nowrap;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .backup-info:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background-color: #2A2B32;
+    color: #ececf1;
 }
 
 .last-backup {
@@ -1299,15 +1500,16 @@ body {
     position: absolute;
     top: 50%;
     right: calc(100% + 8px);
-    transform: translateY(-50%) translateX(-4px);
+    transform: translateY(-50%);
     background: #2A2B32;
     border-radius: 8px;
     padding: 4px;
-    display: flex;
-    opacity: 0;
-    gap: 4px;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255,255,255,0.1);
+    display: none;
+    flex-direction: column;
+    min-width: 120px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
 }
 
 .action-btn {
@@ -1353,6 +1555,157 @@ body {
 
 .action-btn[data-action="google"] i::before {
     content: "🔍";
+}
+
+/* Add tooltip styles */
+.icon-btn {
+    position: relative;
+}
+
+.icon-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    margin-bottom: 5px;
+}
+
+.icon-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Add specific tooltip styles for login icon */
+.login-icon {
+    position: relative;
+}
+
+.login-icon::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    margin-bottom: 5px;
+}
+
+.login-icon:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ai-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2A2B32;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.ai-button:hover {
+    background: #343541;
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.ai-button img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(1.1) contrast(1.1);
+    transition: transform 0.2s ease;
+}
+
+.ai-button:hover img {
+    transform: scale(1.05);
+}
+
+/* Remove tooltip for AI buttons */
+.ai-button::after {
+    display: none;
+}
+
+.ai-button:hover::after {
+    display: none;
+}
+
+/* Settings button */
+#settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#settings-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Refresh button */
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.refresh-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.refresh-btn.rotating {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 

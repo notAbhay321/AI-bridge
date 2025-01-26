@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0.3]
+
+### Added
+- Added persistent chat storage using chrome.storage.local for offline use
+- Added auto-backup functionality for chats every 5 minutes
+- Added last backup time indicator in the UI
+- Added ability to use the extension without logging in
+- Added chat organization by time periods (Today, Yesterday, Previous 7 Days, etc.)
+
+### Changed
+- Improved chat persistence across extension reloads
+- Enhanced chat loading performance
+- Optimized local storage handling
+- Improved user experience for non-logged-in users
+
+### Fixed
+- Fixed chat disappearance issue on extension reload
+- Fixed chat synchronization between local and cloud storage
+
 ## [1.2.0.2]
 
 ### Added

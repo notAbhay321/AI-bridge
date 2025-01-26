@@ -75,6 +75,7 @@ function loadSettings() {
             { id: 'claude', enabled: true },
             { id: 'perplexity', enabled: true },
             { id: 'copilot', enabled: true },
+            { id: 'github-copilot', enabled: true },
             { id: 'deepseek', enabled: true },
             { id: 'mistral', enabled: true },
             { id: 'phind', enabled: true }
@@ -136,6 +137,7 @@ function resetSettings() {
             { id: 'claude', enabled: true },
             { id: 'perplexity', enabled: true },
             { id: 'copilot', enabled: true },
+            { id: 'github-copilot', enabled: true },
             { id: 'deepseek', enabled: true },
             { id: 'mistral', enabled: true },
             { id: 'phind', enabled: true }

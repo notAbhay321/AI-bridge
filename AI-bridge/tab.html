@@ -9,6 +9,7 @@
     <script type="module" src="ai-copilot.js"></script>
     <script type="module" src="ai-deepseek.js"></script>
     <script type="module" src="ai-gemini.js"></script>
+    <script type="module" src="ai-github-copilot.js"></script>
     <script type="module" src="ai-mistral.js"></script>
     <script type="module" src="ai-perplexity.js"></script>
     <script type="module" src="ai-phind.js"></script>
@@ -20,11 +21,9 @@
         <nav class="side-nav">
             <div class="nav-header">
                 <h3 class="glitch" data-text="AI-Bridge">
-                    <span data-text="A">A</span><span data-text="I">I</span><span data-text="-">-</span>
-                    <span data-text="B">B</span><span data-text="R">R</span><span data-text="I">I</span>
-                    <span data-text="D">D</span><span data-text="G">G</span><span data-text="E">E</span>
+                    <span data-text="A">A</span><span data-text="I">I</span><span data-text="-">-</span><span data-text="B">B</span><span data-text="R">R</span><span data-text="I">I</span><span data-text="D">D</span><span data-text="G">G</span><span data-text="E">E</span>
                 </h3>
-                <span class="version">v1.2.0.2</span>
+                <span class="version">v1.2.0.3</span>
             </div>
             <div class="nav-content">
                 <button class="new-chat-btn" id="new-chat-btn">New Chat</button>
@@ -91,14 +90,60 @@
                 <!-- Toggle Container moved here -->
                 <div class="toggle-container">
                     <button class="toggle all-ai-toggle" title="Toggle All AI" id="all-ai">All AI</button>
-                    <button class="toggle ai-button" data-url="https://chatgpt.com/" data-query="*://chatgpt.com/*" id="openai">ChatGPT</button>
-                    <button class="toggle ai-button" data-url="https://gemini.google.com/" data-query="*://gemini.google.com/*" id="gemini">Gemini</button>
-                    <button class="toggle ai-button" data-url="https://www.perplexity.ai/" data-query="*://*.perplexity.ai/*" id="perplexity">Perplexity</button>
-                    <button class="toggle ai-button" data-url="https://copilot.microsoft.com/" data-query="*://copilot.microsoft.com/*" id="copilot">Copilot</button>
-                    <button class="toggle ai-button" data-url="https://chat.deepseek.com/" data-query="*://chat.deepseek.com/*" id="deepseek">Deepseek</button>
-                    <button class="toggle ai-button" data-url="https://chat.mistral.ai/chat" data-query="*://chat.mistral.ai/*" id="mistral">Mistral</button>
-                    <button class="toggle ai-button" data-url="https://www.phind.com/" data-query="*://*.phind.com/*" id="phind">Phind</button>
-                    <button class="toggle ai-button" data-url="https://claude.ai/" data-query="*://claude.ai/*" id="claude">Claude</button>
+                    <button class="toggle ai-button" data-url="https://chatgpt.com/" data-query="*://chatgpt.com/*" id="openai">
+                        <img src="icons/chatgpt.png" alt="ChatGPT Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://gemini.google.com/" data-query="*://gemini.google.com/*" id="gemini">
+                        <img src="icons/gemini.png" alt="Gemini Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://www.perplexity.ai/" data-query="*://*.perplexity.ai/*" id="perplexity">
+                        <img src="icons/perplexity.png" alt="Perplexity Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://copilot.microsoft.com/" data-query="*://copilot.microsoft.com/*" id="copilot">
+                        <img src="icons/Microsoft_365_Copilot.png" alt="Copilot Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://github.com/copilot" data-query="*://github.com/copilot*" id="github-copilot">
+                        <img src="icons/githubcopilot.png" alt="GitHub Copilot Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://chat.deepseek.com/" data-query="*://chat.deepseek.com/*" id="deepseek">
+                        <img src="icons/DeepSeek.png" alt="Deepseek Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://chat.mistral.ai/chat" data-query="*://chat.mistral.ai/*" id="mistral">
+                        <img src="icons/mistral.png" alt="Mistral Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://www.phind.com/" data-query="*://*.phind.com/*" id="phind">
+                        <img src="icons/v0.png" alt="Phind Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
+                    <button class="toggle ai-button" data-url="https://claude.ai/" data-query="*://claude.ai/*" id="claude">
+                        <img src="icons/claude.png" alt="Claude Icon">
+                        <div class="message-actions">
+                            <!-- existing message actions -->
+                        </div>
+                    </button>
                 </div>
                 
                 <!-- Input Container -->

@@ -103,61 +103,58 @@ async function initializeUserData(user) {
     }
 }
 
-async function saveChat(chatData) {
+// Save chat to chrome.storage
+const saveChat = async (chatData) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    // If user is not logged in, save to chrome.storage
+    if (!user || !user.idToken) {
+        try {
+            // Get existing chats from chrome.storage
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            
+            // Update the chat
+            localChats[chatData.id] = chatData;
+            
+            // Save back to chrome.storage
+            await chrome.storage.local.set({ localChats });
+            return;
+        } catch (error) {
+            console.error('Error saving to chrome storage:', error);
+            throw error;
+        }
+    }
+
+    // If user is logged in, save to Firebase
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            throw new Error('No authenticated user found');
-        }
-
-        const timestamp = Date.now();
-        const chatRef = window.database.doc(`users/${user.uid}/chats/${chatData.id}`);
-        
-        // Calculate the last activity timestamp
-        let lastActivityTimestamp;
-        if (chatData.messages && chatData.messages.length > 0) {
-            // If there are messages, use the latest message timestamp
-            lastActivityTimestamp = chatData.messages[chatData.messages.length - 1].timestamp;
-        } else {
-            // If no messages, use the most recent timestamp
-            lastActivityTimestamp = Math.max(
-                chatData.updatedAt || 0,
-                chatData.createdAt || 0,
-                chatData.lastMessageTimestamp || 0,
-                timestamp
-            );
-        }
-        
-        // Update timestamps and preserve the title
-        const updatedData = {
-            title: chatData.name || chatData.title,
-            messages: chatData.messages || [],
-            createdAt: chatData.createdAt || timestamp,
-            updatedAt: timestamp,
-            lastMessageTimestamp: lastActivityTimestamp
-        };
-
-        await chatRef.set(updatedData);
-        
-        // Update local state with new timestamps
-        chatMessages[chatData.id] = {
+        const chatRef = window.database.collection(`users/${user.uid}/chats`).doc(chatData.id);
+        await chatRef.set({
             ...chatData,
-            ...updatedData,
-            lastMessageTimestamp: lastActivityTimestamp
-        };
+            updatedAt: Date.now()
+        });
     } catch (error) {
-        console.error('Error saving chat:', error);
+        console.error('Error saving to Firebase:', error);
         throw error;
     }
-}
+};
 
 async function loadChats() {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            return [];
+        
+        // If user is not logged in, load from chrome.storage
+        if (!user || !user.idToken) {
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            return Object.values(localChats).sort((a, b) => {
+                const timestampA = Number(a.lastMessageTimestamp);
+                const timestampB = Number(b.lastMessageTimestamp);
+                return timestampB - timestampA; // Newest first
+            });
         }
 
+        // If user is logged in, load from Firebase
         const userChatsRef = window.database.collection(`users/${user.uid}/chats`);
         const snapshot = await userChatsRef.get();
         
@@ -170,10 +167,8 @@ async function loadChats() {
                 let lastActivityTimestamp;
                 
                 if (messages.length > 0) {
-                    // If there are messages, use the latest message timestamp
                     lastActivityTimestamp = messages[messages.length - 1].timestamp;
                 } else {
-                    // If no messages, use the most recent of updatedAt/createdAt
                     lastActivityTimestamp = Math.max(
                         data.updatedAt || 0,
                         data.createdAt || 0,
@@ -193,7 +188,6 @@ async function loadChats() {
             }
         });
 
-        // Sort chats by most recent activity timestamp
         return chats.sort((a, b) => {
             const timestampA = Number(a.lastMessageTimestamp);
             const timestampB = Number(b.lastMessageTimestamp);
@@ -208,10 +202,17 @@ async function loadChats() {
 async function deleteChat(chatId) {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            throw new Error('No authenticated user found');
+        
+        // If user is not logged in, delete from chrome.storage
+        if (!user || !user.idToken) {
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            delete localChats[chatId];
+            await chrome.storage.local.set({ localChats });
+            return;
         }
 
+        // If user is logged in, delete from Firebase
         await window.database.doc(`users/${user.uid}/chats/${chatId}`).delete();
     } catch (error) {
         console.error('Error deleting chat:', error);
@@ -288,59 +289,63 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Check if user is logged in
         const checkLoginState = async () => {
             const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.idToken) {
-                // Create user info container with SVG avatar
-                const userInfo = document.createElement('div');
-                userInfo.className = 'user-info';
-                userInfo.innerHTML = `
-                    <div class="user-avatar" id="profile-icon" title="${user.email}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            const loginBtn = document.getElementById('login-btn');
+
+            // Always ensure login button exists and is styled correctly
+            if (loginBtn) {
+                if (user && user.idToken) {
+                    // User is logged in
+                    // Create user info container with SVG avatar
+                    const userInfo = document.createElement('div');
+                    userInfo.className = 'user-info';
+                    userInfo.innerHTML = `
+                        <div class="user-avatar" id="profile-icon" title="${user.email}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                             <path d="m9 11 2 2 4-4" />
-                        </svg>
-                    </div>
-                `;
-                
-                // Add click handler for profile icon to open account page
-                userInfo.querySelector('#profile-icon').addEventListener('click', () => {
-                    const accountUrl = chrome.runtime.getURL('account.html');
-                    chrome.tabs.create({ url: accountUrl });
-                });
+                            </svg>
+                        </div>
+                    `;
+                    
+                    // Add click handler for profile icon to open account page
+                    userInfo.querySelector('#profile-icon').addEventListener('click', () => {
+                        const accountUrl = chrome.runtime.getURL('account.html');
+                        chrome.tabs.create({ url: accountUrl });
+                    });
 
-                // Replace existing user info or add new
-                const existingUserInfo = document.querySelector('.user-info');
-                const sideFooter = document.querySelector('.side-footer');
-                
-                if (existingUserInfo) {
-                    existingUserInfo.replaceWith(userInfo);
-                } else if (sideFooter && loginBtn) {
-                    sideFooter.insertBefore(userInfo, loginBtn);
-                }
-                
-                // Hide the login button since we're showing user info
-                if (loginBtn) {
+                    // Replace existing user info or add new
+                    const existingUserInfo = document.querySelector('.user-info');
+                    const sideFooter = document.querySelector('.side-footer');
+                    
+                    if (existingUserInfo) {
+                        existingUserInfo.replaceWith(userInfo);
+                    } else if (sideFooter && loginBtn) {
+                        sideFooter.insertBefore(userInfo, loginBtn);
+                    }
+                    
+                    // Hide login button when user is logged in
                     loginBtn.style.display = 'none';
-                }
 
-                // Initialize database for user
-                try {
-                    await initializeUserData(user);
-                } catch (error) {
-                    console.error('Error initializing user database:', error);
-                }
-            } else {
-                // Show login button if user is not logged in
-                const loginBtn = document.getElementById('login-btn');
-                if (loginBtn) {
-                    loginBtn.textContent = 'Login / Sign Up';
+                    // Initialize database for user
+                    try {
+                        await initializeUserData(user);
+                    } catch (error) {
+                        console.error('Error initializing user database:', error);
+                    }
+                } else {
+                    // User is not logged in
+                    // Show and style login button
+                    loginBtn.style.display = 'flex';
                     loginBtn.classList.remove('logged-in');
-                    loginBtn.style.display = 'block';
-                }
-                // Remove user info if exists
-                const existingUserInfo = document.querySelector('.user-info');
-                if (existingUserInfo) {
-                    existingUserInfo.remove();
+                    loginBtn.style.opacity = '1';
+                    loginBtn.style.visibility = 'visible';
+                    
+                    // Remove user info if exists
+                    const existingUserInfo = document.querySelector('.user-info');
+                    if (existingUserInfo) {
+                        existingUserInfo.remove();
+                    }
                 }
             }
         };
@@ -367,6 +372,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         left: Math.round((screen.width - 400) / 2),
                         top: Math.round((screen.height - 600) / 2)
                     });
+                }
+                // Update login button with title
+                if (loginBtn) {
+                    if (user && user.idToken) {
+                        loginBtn.setAttribute('title', 'View Account Settings');
+                    } else {
+                        loginBtn.setAttribute('title', 'Login/Signup to Sync Your Data');
+                    }
                 }
             });
         }
@@ -552,12 +565,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Modified initializeChats function with Previous 7 Days
         const initializeChats = async () => {
             try {
-                const user = JSON.parse(localStorage.getItem('user'));
-                if (!user) {
-                    console.log('No user logged in');
-                    return;
-                }
-
                 // Clear existing chats from UI and memory
                 chatList.innerHTML = '';
                 chatMessages = {};
@@ -694,8 +701,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     chatList.appendChild(chatElement);
                 }
 
-                // Save to Firebase
-                await saveChat(chatData);
+                // Only save to Firebase if user is logged in
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user && user.idToken) {
+                    try {
+                        await saveChat(chatData);
+                    } catch (error) {
+                        console.error('Error saving to Firebase:', error);
+                        // Continue even if Firebase save fails
+                    }
+                }
 
                 // Activate the new chat
                 activateChat(chatElement);
@@ -710,14 +725,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Modified addMessage function
         const addMessage = async (message, chatId = activeChat?.dataset?.chatId) => {
-            if (!chatId || !chatMessages[chatId]) return;
-            
-            const messageData = {
-                text: message,
-                timestamp: Date.now()
-            };
-            
             try {
+                // If no active chat, create a new one
+                if (!chatId) {
+                    chatId = await createNewChat();
+                }
+                
+                // Initialize chat messages if needed
+                if (!chatMessages[chatId]) {
+                    chatMessages[chatId] = {
+                        id: chatId,
+                        name: 'New Chat',
+                        messages: [],
+                        lastMessageTimestamp: Date.now()
+                    };
+                }
+                
+                const messageData = {
+                    text: message,
+                    timestamp: Date.now()
+                };
+                
                 // Update local state
                 if (!chatMessages[chatId].messages) {
                     chatMessages[chatId].messages = [];
@@ -725,22 +753,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                 chatMessages[chatId].messages.push(messageData);
                 chatMessages[chatId].lastMessageTimestamp = messageData.timestamp;
                 
-                // Save to Firebase
-                await saveChat(chatMessages[chatId]);
+                // Try to save to Firebase if user is logged in
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user && user.idToken) {
+                    try {
+                        await saveChat(chatMessages[chatId]);
+                    } catch (error) {
+                        console.error('Error saving to Firebase:', error);
+                        // Continue even if Firebase save fails
+                    }
+                }
                 
-                // Update UI
+                // Update UI regardless of login state
                 displayMessages(chatId);
                 
-                // Re-sort chat list
-                const chatElement = document.querySelector(`[data-chat-id="${chatId}"]`);
-                if (chatElement && chatElement.parentNode === chatList) {
-                    chatList.removeChild(chatElement);
-                    chatList.insertBefore(chatElement, chatList.firstChild);
+                // Clear input after successful message add
+                if (promptTextElem) {
+                    promptTextElem.value = '';
                 }
+                
+                return chatId;
             } catch (error) {
                 console.error('Error adding message:', error);
-                chatMessages[chatId].messages.pop();
-                displayMessages(chatId);
+                showNotification('Failed to add message');
+                throw error;
             }
         };
 
@@ -1000,7 +1036,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const renameIcon = document.createElement('button');
             renameIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
             renameIcon.className = 'chat-icon rename-icon';
-            renameIcon.title = 'Rename';
+            renameIcon.title = 'Rename Chat';
             renameIcon.onclick = (e) => {
                 e.stopPropagation();
                 const newName = prompt('Enter new name:', chatName);
@@ -1018,7 +1054,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const archiveIcon = document.createElement('button');
             archiveIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>';
             archiveIcon.className = 'chat-icon archive-icon';
-            archiveIcon.title = 'Archive';
+            archiveIcon.title = 'Archive This Chat';
             archiveIcon.onclick = async (e) => {
                 e.stopPropagation();
                 try {
@@ -1034,7 +1070,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const deleteIcon = document.createElement('button');
             deleteIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
             deleteIcon.className = 'chat-icon delete-icon';
-            deleteIcon.title = 'Delete';
+            deleteIcon.title = 'Delete This Chat';
             deleteIcon.onclick = async (e) => {
                 e.stopPropagation();
                 if (confirm('Are you sure you want to delete this chat?')) {
@@ -1736,5 +1772,68 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error('Error initializing application:', error);
     }
 });
+
+// Add titles to icons
+const refreshBtn = document.querySelector('.refresh-btn');
+if (refreshBtn) {
+    refreshBtn.setAttribute('title', 'Refresh Chat History');
+}
+
+const settingsIcon = document.querySelector('.settings-icon');
+if (settingsIcon) {
+    settingsIcon.setAttribute('title', 'Open Extension Settings');
+}
+
+const archiveIcon = document.querySelector('.archive-icon');
+if (archiveIcon) {
+    archiveIcon.setAttribute('title', 'View Archived Conversations');
+}
+
+// Update login button tooltip based on login state
+const updateLoginButtonTooltip = () => {
+    const loginBtn = document.getElementById('login-btn');
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    if (loginBtn) {
+        if (user && user.idToken) {
+            loginBtn.setAttribute('title', 'View Account Settings');
+        } else {
+            loginBtn.setAttribute('title', 'Login/Signup to Sync Your Data');
+        }
+    }
+};
+
+// Call on initial load and after login state changes
+updateLoginButtonTooltip();
+
+// Update the checkLoginState function to also update tooltips
+const checkLoginState = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const loginBtn = document.getElementById('login-btn');
+
+    if (loginBtn) {
+        if (user && user.idToken) {
+            loginBtn.setAttribute('title', 'View Account Settings');
+            // ... rest of logged in state code ...
+        } else {
+            loginBtn.setAttribute('title', 'Login/Signup to Sync Your Data');
+            // ... rest of logged out state code ...
+        }
+    }
+    // ... rest of existing checkLoginState code ...
+};
+
+// Update chat icons in createChatElement function
+function createChatElement(chatName, chatId, insertAtTop = false) {
+    // ... existing code ...
+    
+    renameIcon.setAttribute('title', 'Rename Chat');
+    
+    archiveIcon.setAttribute('title', 'Archive This Chat');
+    
+    deleteIcon.setAttribute('title', 'Delete This Chat');
+    
+    // ... rest of existing code ...
+}
 
 
