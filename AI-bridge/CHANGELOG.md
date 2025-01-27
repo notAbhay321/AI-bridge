@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0.5] - 2024-03-XX
+
+### Performance Improvements
+- Significantly reduced Firestore token usage by implementing pagination and optimizing data fetching
+- Removed automatic 5-minute backup to reduce unnecessary read operations
+- Implemented chat pagination: initial load of 10 chats + 5 chats per "Show More" click
+- Added lazy loading for messages (20 messages at a time) to reduce initial load
+- Optimized message storage using Firestore subcollections
+
+### UI Enhancements
+- Added "Show More" button for loading additional chats
+- Improved chat loading performance with paginated results
+- Enhanced message loading with smooth lazy loading behavior
+
 ## [1.2.0.4] - 2024-03-19
 
 ### Added
