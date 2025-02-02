@@ -58,7 +58,7 @@ async function loadFirebaseScripts() {
         // Initialize user data if logged in
         const user = JSON.parse(localStorage.getItem('user'));
         if (user) {
-                await initializeUserData(user);
+            await initializeUserData(user);
         }
     } catch (error) {
         console.error('Error loading Firebase:', error);
@@ -129,92 +129,71 @@ const saveChat = async (chatData) => {
     // If user is logged in, save to Firebase
     try {
         const chatRef = window.database.collection(`users/${user.uid}/chats`).doc(chatData.id);
+        
+        // Prepare chat data with metadata
+        const messages = chatData.messages || [];
+        const lastMessage = messages[messages.length - 1];
+        
         await chatRef.set({
-            ...chatData,
-            updatedAt: Date.now()
-            });
+            title: chatData.title || chatData.name,
+            messageCount: messages.length,
+            lastMessageTimestamp: lastMessage ? lastMessage.timestamp : chatData.lastMessageTimestamp,
+            createdAt: chatData.createdAt || Date.now(),
+            updatedAt: Date.now(),
+            messages: messages, // Store full messages array
+            archived: chatData.archived || false
+        });
     } catch (error) {
         console.error('Error saving to Firebase:', error);
         throw error;
     }
 };
 
-async function loadChats(limit = 10, offset = 0) {
+async function loadChats() {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
-
+        
         // If user is not logged in, load from chrome.storage
         if (!user || !user.idToken) {
             const result = await chrome.storage.local.get('localChats');
             const localChats = result.localChats || {};
-            const sortedChats = Object.values(localChats).sort((a, b) => {
+            return Object.values(localChats).sort((a, b) => {
                 const timestampA = Number(a.lastMessageTimestamp);
                 const timestampB = Number(b.lastMessageTimestamp);
                 return timestampB - timestampA; // Newest first
             });
-            
-            // Return paginated results
-            return {
-                chats: sortedChats.slice(offset, offset + limit),
-                hasMore: sortedChats.length > offset + limit,
-                total: sortedChats.length
-            };
         }
 
         // If user is logged in, load from Firebase
         const userChatsRef = window.database.collection(`users/${user.uid}/chats`);
+        // Only fetch chat metadata initially
         const snapshot = await userChatsRef.get();
-
-        const allChats = [];
+        
+        const chats = [];
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             if (data) {
-                // Get the timestamp of the last message or most recent activity
-                const messages = data.messages || [];
-                let lastActivityTimestamp;
-
-                if (messages.length > 0) {
-                    lastActivityTimestamp = messages[messages.length - 1].timestamp;
-                } else {
-                    lastActivityTimestamp = Math.max(
-                        data.updatedAt || 0,
-                        data.createdAt || 0,
-                        data.lastMessageTimestamp || 0
-                    );
-                }
-
-                allChats.push({
+                chats.push({
                     id: doc.id,
-                    name: data.title || `Chat ${allChats.length + 1}`,
-                    title: data.title || `Chat ${allChats.length + 1}`,
-                    messages: messages,
+                    name: data.title || `Chat ${chats.length + 1}`,
+                    title: data.title || `Chat ${chats.length + 1}`,
+                    messageCount: data.messageCount || 0,
                     createdAt: data.createdAt || Date.now(),
                     updatedAt: data.updatedAt || Date.now(),
-                    lastMessageTimestamp: lastActivityTimestamp
+                    lastMessageTimestamp: data.lastMessageTimestamp || data.updatedAt || data.createdAt,
+                    hasLoadedMessages: false // New flag to track if messages are loaded
                 });
             }
         });
 
-        // Sort chats by timestamp
-        const sortedChats = allChats.sort((a, b) => {
+        return chats.sort((a, b) => {
             const timestampA = Number(a.lastMessageTimestamp);
             const timestampB = Number(b.lastMessageTimestamp);
             return timestampB - timestampA; // Newest first
         });
-
-        // Return paginated results
-        return {
-            chats: sortedChats.slice(offset, offset + limit),
-            hasMore: sortedChats.length > offset + limit,
-            total: sortedChats.length
-        };
     } catch (error) {
         console.error('Error loading chats:', error);
-        return {
-            chats: [],
-            hasMore: false,
-            total: 0
-        };
+        return [];
     }
 }
 
@@ -239,18 +218,59 @@ async function deleteChat(chatId) {
     }
 }
 
+async function loadChatMessages(chatId) {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        
+        // If user is not logged in, return empty messages
+        if (!user || !user.idToken) {
+            return [];
+        }
+
+        // Load messages from Firebase
+        const chatRef = window.database.doc(`users/${user.uid}/chats/${chatId}`);
+        const chatDoc = await chatRef.get();
+        
+        if (chatDoc.exists) {
+            const data = chatDoc.data();
+            // Handle Firebase array format
+            const messages = data.messages;
+            if (messages) {
+                // Check if it's a Firebase array value
+                if (messages.arrayValue && messages.arrayValue.values) {
+                    return messages.arrayValue.values.map(msg => ({
+                        text: msg.mapValue?.fields?.text?.stringValue || msg.text || '',
+                        timestamp: Number(msg.mapValue?.fields?.timestamp?.integerValue) || msg.timestamp || Date.now()
+                    }));
+                }
+                // Handle regular array format
+                if (Array.isArray(messages)) {
+                    return messages;
+                }
+            }
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('Error loading chat messages:', error);
+        return [];
+    }
+}
+
+// Add message listener for login events
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'login_successful') {
+        console.log('Login detected, refreshing extension...');
+        // Reload extension data
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+    return true;
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        // Add message listener for auth completion
-        chrome.runtime.onMessage.addListener(async (message) => {
-            if (message.type === 'AUTH_COMPLETED') {
-                // Refresh login state and chats
-                await checkLoginState();
-                await initializeChats();
-                showNotification('Login successful! Loading your chats...');
-            }
-        });
-
         // Add styles for backup info
         const style = document.createElement('style');
         style.textContent = `
@@ -374,7 +394,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             </div>
                         `;
                     }
-
+                    
                     // Create user info container with SVG avatar
                     const userInfo = document.createElement('div');
                     userInfo.className = 'user-info';
@@ -387,7 +407,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             </svg>
                         </div>
                     `;
-
+                    
                     // Add click handler for profile icon to open account page
                     userInfo.querySelector('#profile-icon').addEventListener('click', () => {
                         const accountUrl = chrome.runtime.getURL('account.html');
@@ -538,22 +558,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            let messages = chatMessages[chatId].messages;
-            
-            // Handle different message formats
-            if (messages && messages.arrayValue && messages.arrayValue.values) {
-                messages = messages.arrayValue.values.map(msg => ({
-                    text: msg.mapValue.fields.text.stringValue,
-                    timestamp: parseInt(msg.mapValue.fields.timestamp.integerValue) || Date.now()
-                }));
-            } else if (!Array.isArray(messages)) {
+            const messages = chatMessages[chatId].messages;
+            // Ensure messages is an array and has items
+            if (!Array.isArray(messages)) {
                 console.error('Messages is not an array:', messages);
-                messages = [];
+                chatContainer.innerHTML = '<div class="error-message">Error loading messages. Please try refreshing.</div>';
+                return;
+            }
+
+            if (messages.length === 0) {
+                chatContainer.innerHTML = '<div class="empty-chat">No messages yet. Start typing below!</div>';
+                return;
             }
 
             let lastDate = null;
             messages.forEach(message => {
-                const messageDate = new Date(message.timestamp);
+                // Handle different message formats
+                const messageText = typeof message === 'string' ? message : 
+                                  message.text || 
+                                  message.mapValue?.fields?.text?.stringValue || 
+                                  '';
+                
+                const messageTimestamp = typeof message === 'string' ? Date.now() : 
+                                       message.timestamp || 
+                                       Number(message.mapValue?.fields?.timestamp?.integerValue) || 
+                                       Date.now();
+
+                const messageDate = new Date(messageTimestamp);
                 const currentDate = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
 
                 // Add date separator if date changes
@@ -561,13 +592,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     chatContainer.appendChild(createDateSeparator(messageDate));
                     lastDate = currentDate;
                 }
-                
-                const messageDiv = createMessageElement(message);
+
+                const messageDiv = createMessageElement({
+                    text: messageText,
+                    timestamp: messageTimestamp
+                });
                 chatContainer.appendChild(messageDiv);
             });
 
             // Scroll to bottom
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         // Function to update last backup time
@@ -651,6 +685,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 // Add click handler for refresh button
                 refreshBtn.addEventListener('click', refreshChats);
+
+                // Auto-backup chats every 5 minutes
+                setInterval(backupChats, 5 * 60 * 1000);
             }
         };
 
@@ -666,21 +703,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             return separator;
         }
 
-        // Modified initializeChats function
+        // Modified initializeChats function with Previous 7 Days
         const initializeChats = async () => {
             try {
                 // Clear existing chats from UI and memory
                 chatList.innerHTML = '';
                 chatMessages = {};
 
-                let currentOffset = 0;
-                const INITIAL_LOAD = 10;
-                const LOAD_MORE_COUNT = 5;
-
-                // Load initial chats
-                const initialResult = await loadChats(INITIAL_LOAD, 0);
-                const { chats: savedChats, hasMore, total } = initialResult;
-
+                // Load saved chats
+                const savedChats = await loadChats();
                 if (savedChats && savedChats.length > 0) {
                     // Group chats by time period
                     const now = new Date();
@@ -694,178 +725,88 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     let currentSection = null;
 
-                    const displayChats = (chatsToDisplay) => {
-                        chatsToDisplay.forEach(chat => {
-                            const chatDate = new Date(chat.lastMessageTimestamp);
-                            let section = '';
+                    savedChats.forEach(chat => {
+                        const chatDate = new Date(chat.lastMessageTimestamp);
+                        let section = '';
 
-                            if (chatDate >= today) {
-                                section = 'Today';
-                            } else if (chatDate >= yesterday) {
-                                section = 'Yesterday';
-                            } else if (chatDate >= sevenDaysAgo) {
-                                section = 'Previous 7 Days';
-                            } else if (chatDate >= thirtyDaysAgo) {
-                                section = 'Previous 30 Days';
-                            } else {
-                                section = 'Older';
-                            }
+                        if (chatDate >= today) {
+                            section = 'Today';
+                        } else if (chatDate >= yesterday) {
+                            section = 'Yesterday';
+                        } else if (chatDate >= sevenDaysAgo) {
+                            section = 'Previous 7 Days';
+                        } else if (chatDate >= thirtyDaysAgo) {
+                            section = 'Previous 30 Days';
+                        } else {
+                            section = 'Older';
+                        }
 
-                            // Add section separator if needed
-                            if (section !== currentSection) {
-                                chatList.appendChild(createTimeSeparator(section));
-                                currentSection = section;
-                            }
+                        // Add section separator if needed
+                        if (section !== currentSection) {
+                            chatList.appendChild(createTimeSeparator(section));
+                            currentSection = section;
+                        }
 
-                            // Add chat to memory
-                            chatMessages[chat.id] = {
-                                id: chat.id,
-                                name: chat.name || chat.title,
-                                title: chat.title,
-                                messages: chat.messages || [],
-                                createdAt: chat.createdAt || Date.now(),
-                                updatedAt: chat.updatedAt || Date.now(),
-                                lastMessageTimestamp: chat.lastMessageTimestamp
-                            };
+                        // Add chat to memory
+                        chatMessages[chat.id] = {
+                            id: chat.id,
+                            name: chat.name || chat.title,
+                            title: chat.title,
+                            messages: [],
+                            createdAt: chat.createdAt || Date.now(),
+                            updatedAt: chat.updatedAt || Date.now(),
+                            lastMessageTimestamp: chat.lastMessageTimestamp
+                        };
 
-                            // Create chat element
-                            createChatElement(chatMessages[chat.id].name, chat.id, false);
-                        });
+                        // Create chat element
+                        createChatElement(chatMessages[chat.id].name, chat.id, false);
+                    });
+
+                    // Activate the first chat (most recent)
+                    const firstChat = chatList.querySelector('.chat-item');
+                    if (firstChat) {
+                        activateChat(firstChat);
+                    }
+                } else {
+                    // Create a welcome chat if no chats exist
+                    const chatId = 'chat_' + Date.now();
+                    const timestamp = Date.now();
+                    const chatData = {
+                        id: chatId,
+                        name: 'Welcome Chat',
+                        title: 'Welcome Chat',
+                        messages: [{
+                            text: 'Welcome to AI Bridge! Start by typing a message below.',
+                            timestamp: timestamp
+                        }],
+                        createdAt: timestamp,
+                        updatedAt: timestamp,
+                        lastMessageTimestamp: timestamp
                     };
-
-                    // Display initial chats
-                    displayChats(savedChats);
-
-                    // Add "Show More" button if there are more chats
-                    if (hasMore) {
-                        const showMoreContainer = document.createElement('div');
-                        showMoreContainer.className = 'show-more-container';
-                        
-                        const showMoreButton = document.createElement('button');
-                        showMoreButton.className = 'show-more-button';
-                        showMoreButton.innerHTML = `Show More (${total - INITIAL_LOAD} remaining)`;
-                        
-                        showMoreButton.addEventListener('click', async () => {
-                            currentOffset += INITIAL_LOAD;
-                            const nextResult = await loadChats(LOAD_MORE_COUNT, currentOffset);
-                            
-                            displayChats(nextResult.chats);
-                            
-                            // Update or remove the "Show More" button
-                            if (!nextResult.hasMore) {
-                                showMoreContainer.remove();
-                            } else {
-                                showMoreButton.innerHTML = `Show More (${total - (currentOffset + LOAD_MORE_COUNT)} remaining)`;
-                            }
-                        });
-                        
-                        showMoreContainer.appendChild(showMoreButton);
-                        chatList.appendChild(showMoreContainer);
-                    }
+                    
+                    chatMessages[chatId] = chatData;
+                    chatList.appendChild(createTimeSeparator('Today'));
+                    const chatElement = createChatElement(chatData.name, chatId, true);
+                    activateChat(chatElement);
+                    
+                    // Save the welcome chat
+                    await saveChat(chatData);
                 }
 
-                // Create a new chat only if no chats exist
-                if (!savedChats || savedChats.length === 0) {
-                    const newChatId = await createNewChat();
-                    const newChatElement = document.querySelector(`[data-chat-id="${newChatId}"]`);
-                    if (newChatElement) {
-                        activateChat(newChatElement);
-                    }
-                }
+                // Update last backup time
+                updateLastBackupTime();
             } catch (error) {
                 console.error('Error initializing chats:', error);
                 showNotification('Error loading chats');
             }
         };
 
-        // Modified activateChat function
-        function activateChat(chatItem) {
-            if (activeChat) {
-                activeChat.classList.remove('active');
-            }
-            chatItem.classList.add('active');
-            activeChat = chatItem;
-            
-            const chatId = chatItem.dataset.chatId;
-            const chatName = chatItem.querySelector('span').textContent;
-            chatTitleText.textContent = chatName;
-            
-            // Fetch chat history
-            fetchChatHistory(chatId).then(() => {
-                displayMessages(chatId);
-            }).catch(error => {
-                console.error('Error fetching chat history:', error);
-                showNotification('Error loading chat history');
-            });
-        }
-
-        // Modified fetchChatHistory function
-        async function fetchChatHistory(chatId) {
-            try {
-                const user = JSON.parse(localStorage.getItem('user'));
-                
-                if (user && user.idToken) {
-                    // Fetch from Firestore
-                    const chatDoc = await window.database
-                        .collection(`users/${user.uid}/chats`)
-                        .doc(chatId)
-                        .get();
-                    
-                    if (chatDoc.exists) {
-                        const data = chatDoc.data();
-                        // Convert Firestore messages to proper array format
-                        let messages = [];
-                        if (data.messages && data.messages.arrayValue && data.messages.arrayValue.values) {
-                            messages = data.messages.arrayValue.values.map(msg => ({
-                                text: msg.mapValue.fields.text.stringValue,
-                                timestamp: parseInt(msg.mapValue.fields.timestamp.integerValue) || Date.now()
-                            }));
-                        } else if (Array.isArray(data.messages)) {
-                            messages = data.messages;
-                        }
-
-                        chatMessages[chatId] = {
-                            id: chatId,
-                            name: data.title || `Chat ${Object.keys(chatMessages).length + 1}`,
-                            title: data.title || `Chat ${Object.keys(chatMessages).length + 1}`,
-                            messages: messages,
-                            createdAt: data.createdAt || Date.now(),
-                            updatedAt: data.updatedAt || Date.now(),
-                            lastMessageTimestamp: data.lastMessageTimestamp || Date.now()
-                        };
-                    }
-                } else {
-                    // Fetch from local storage
-                    const result = await chrome.storage.local.get('localChats');
-                    const localChat = result.localChats?.[chatId];
-                    if (localChat) {
-                        chatMessages[chatId] = localChat;
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching chat history:', error);
-                throw error;
-            }
-        }
-
         // Modified createNewChat function
         const createNewChat = async () => {
             try {
                 const chatId = 'chat_' + Date.now();
                 const timestamp = Date.now();
-                
-                // Calculate the next chat number based on existing chats
-                const existingChats = Object.values(chatMessages);
-                let maxNumber = 0;
-                existingChats.forEach(chat => {
-                    const match = chat.name.match(/Chat (\d+)/);
-                    if (match) {
-                        const num = parseInt(match[1]);
-                        if (num > maxNumber) maxNumber = num;
-                    }
-                });
-                const chatNumber = maxNumber + 1;
-                const chatName = `Chat ${chatNumber}`;
+                const chatName = `Chat ${Object.values(chatMessages).length + 1}`;
 
                 const chatData = {
                     id: chatId,
@@ -1353,35 +1294,665 @@ document.addEventListener("DOMContentLoaded", async () => {
             return separator;
         }
 
-        // Add styles for the Show More button
-        const showMoreStyles = document.createElement('style');
-        showMoreStyles.textContent += `
-            .show-more-container {
-                display: flex;
-                justify-content: center;
-                padding: 10px;
-                margin: 5px;
+        function activateChat(chatElement) {
+            if (activeChat) {
+                activeChat.classList.remove('active');
             }
             
-            .show-more-button {
-                background-color: var(--bg-secondary);
-                color: var(--text-primary);
-                border: 1px solid var(--border-color);
-                padding: 8px 16px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: all 0.2s ease;
-            }
+            chatElement.classList.add('active');
+            activeChat = chatElement;
+            const chatId = chatElement.dataset.chatId;
             
-            .show-more-button:hover {
-                background-color: var(--bg-hover);
+            // Update chat title
+            chatTitleText.textContent = chatMessages[chatId]?.name || 'Chat';
+            
+            // Only load messages if they haven't been loaded yet
+            if (!chatMessages[chatId]?.hasLoadedMessages) {
+                // Show loading indicator
+                chatContainer.innerHTML = '<div class="loading-messages">Loading messages...</div>';
+                
+                // Load messages
+                loadChatMessages(chatId).then(messages => {
+                    chatMessages[chatId].messages = messages;
+                    chatMessages[chatId].hasLoadedMessages = true;
+                    
+                    // Display messages if this chat is still active
+                    if (activeChat?.dataset?.chatId === chatId) {
+                        displayMessages(chatId);
+                    }
+                }).catch(error => {
+                    console.error('Error loading messages:', error);
+                    chatContainer.innerHTML = '<div class="error-message">Failed to load messages</div>';
+                });
+            } else {
+                // Messages already loaded, display them immediately
+                displayMessages(chatId);
             }
-        `;
-        document.head.appendChild(showMoreStyles);
+        }
 
-        // Initialize chats
-        await initializeChats();
+        // Function to format date in DD.MM.YY pattern
+        function formatCustomDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear()).slice(-2);
+            return `${day}.${month}.${year}`;
+        }
+
+        // Function to format time in HH:mm pattern
+        function formatCustomTime(hours, minutes) {
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            return `${formattedHours}:${formattedMinutes}`;
+        }
+
+            // Modify the delete chat functionality
+            const deleteCurrentChat = async () => {
+                if (activeChat && chatList.childNodes.length > 1) {
+                    try {
+            const chatId = activeChat.dataset.chatId;
+                        const currentChatElement = activeChat;
+                        const nextChat = currentChatElement.nextElementSibling || currentChatElement.previousElementSibling;
+                        
+                        // Delete from Firebase first
+                        await deleteChat(chatId);
+                        
+                        // If Firebase delete successful, update local state
+                        delete chatMessages[chatId];
+                        currentChatElement.remove();
+                        
+                        // Activate next chat if available
+                        if (nextChat) {
+                            activateChat(nextChat);
+                        } else {
+                            activeChat = null;
+                            chatContainer.innerHTML = '';
+                            chatTitleText.textContent = 'Select a chat';
+                        }
+                        
+                        showNotification('Chat deleted successfully');
+                    } catch (error) {
+                        console.error('Error deleting chat:', error);
+                        showNotification('Failed to delete chat');
+                    }
+                }
+            };
+
+            // Add delete chat handler
+            document.addEventListener('keydown', async (e) => {
+                if (e.key === 'Delete' && activeChat) {
+                    await deleteCurrentChat();
+                }
+                // Add Alt+I shortcut for new chat
+                if (e.key === 'i' && e.altKey) {
+                    e.preventDefault(); // Prevent default browser behavior
+                    await createNewChat();
+                }
+            });
+
+        newChatBtn.addEventListener('click', createNewChat);
+
+        // Add tooltip for Ctrl+Enter
+        promptButtonElem.title = "Press Ctrl+Enter to send";
+
+        // Add Ctrl+Enter handler to text input
+        promptTextElem.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey && !promptButtonElem.disabled) {
+                e.preventDefault();
+                promptButtonElem.click();
+            }
+        });
+
+        // Add paste event listener for image handling
+        promptTextElem.addEventListener('paste', async (e) => {
+            const items = e.clipboardData.items;
+            
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault(); // Prevent default paste behavior
+                    
+                    // Get the image file
+                    const file = item.getAsFile();
+                    if (file) {
+                        // Create a notification
+                        showNotification('Opening image in Google Lens...');
+                        
+                        // Open Google Lens in a new tab
+                        window.open('https://lens.google.com/', '_blank');
+                    }
+                    break;
+                }
+            }
+        });
+
+        // Regular paste handling continues below...
+        promptTextElem.addEventListener('input', () => {
+            const value = promptTextElem.value;
+            promptButtonElem.disabled = value.trim().length === 0;
+        });
+
+        const aiButtons = Array.from(document.querySelectorAll(".ai-button"));
+        
+        // Function to handle AI button click
+        const handleAiButtonClick = async (button) => {
+            const isActive = button.classList.contains('active');
+            
+            // Check if tab already exists
+            const existingTabs = await chrome.tabs.query({ 
+                url: button.dataset.query,
+                currentWindow: true 
+            });
+            
+            if (!isActive) {
+                // Only create new tab if one doesn't exist
+                if (!existingTabs || existingTabs.length === 0) {
+                    await chrome.tabs.create({ 
+                        url: button.dataset.url, 
+                        pinned: true,
+                        active: false
+                    });
+                }
+            } else {
+                // Close existing tabs when clicking an active button
+                if (existingTabs && existingTabs.length > 0) {
+                    await chrome.tabs.remove(existingTabs.map(tab => tab.id));
+                }
+            }
+            
+            button.classList.toggle('active');
+        };
+
+        // Add click handlers to AI buttons
+        aiButtons.forEach(button => {
+            button.addEventListener('click', () => handleAiButtonClick(button));
+        });
+
+        // Handle All AI toggle
+        allAiToggle.addEventListener('click', async () => {
+            const allActive = aiButtons.every(btn => btn.classList.contains('active'));
+            const newState = !allActive;
+            
+            // First focus on current tab to ensure we stay here
+            if (currentTabId) {
+                await chrome.tabs.update(currentTabId, { active: true });
+            }
+
+            if (newState) {
+                // Opening tabs
+                for (const button of aiButtons) {
+                    if (newState !== button.classList.contains('active')) {
+                        await handleAiButtonClick(button);
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+            } else {
+                // Closing tabs - find and close all AI model tabs
+                for (const button of aiButtons) {
+                    const tabs = await chrome.tabs.query({ 
+                        url: button.dataset.query,
+                        currentWindow: true 
+                    });
+                    if (tabs.length > 0) {
+                        await chrome.tabs.remove(tabs.map(tab => tab.id));
+                    }
+                    button.classList.remove('active');
+                }
+            }
+
+            // Update All AI button state
+            allAiToggle.classList.remove('active', 'inactive');
+            allAiToggle.classList.add(newState ? 'active' : 'inactive');
+        });
+
+        // Initialize button states from settings
+        async function initializeButtonStates() {
+            const settings = await getSettings() || aiButtons.reduce((acc, elem) => {
+                acc[elem.id] = false;
+                return acc;
+            }, { lastPrompt: "" });
+
+            promptTextElem.value = settings.lastPrompt ?? "";
+            promptTextElem.dispatchEvent(new Event('input'));
+
+            // Check for existing tabs and update button states
+            for (const button of aiButtons) {
+                const existingTabs = await chrome.tabs.query({ 
+                    url: button.dataset.query,
+                    currentWindow: true 
+                });
+                
+                if (existingTabs && existingTabs.length > 0) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+
+            // Update All AI button state
+            const allActive = aiButtons.every(btn => btn.classList.contains('active'));
+            const someActive = aiButtons.some(btn => btn.classList.contains('active'));
+            allAiToggle.classList.remove('active', 'inactive');
+            if (allActive) {
+                allAiToggle.classList.add('active');
+            } else if (!someActive) {
+                allAiToggle.classList.add('inactive');
+            }
+        }
+
+        // Call the initialization function
+        initializeButtonStates();
+
+        // Handle submit button
+        promptButtonElem.addEventListener("click", async () => {
+            const prompt = promptTextElem.value;
+            
+            // Add send animation
+            const sendIcon = promptButtonElem.querySelector('svg');
+            sendIcon.classList.add('sending');
+            
+            // Add message to current chat
+            addMessage(prompt);
+            
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(prompt);
+                _LL("copied to clipboard!");
+            }
+
+            // Save settings
+            const settings = aiButtons.reduce((acc, elem) => {
+                acc[elem.id] = elem.classList.contains('active');
+                return acc;
+            }, { lastPrompt: prompt });
+            await saveSettings(settings);
+
+            // Submit to active AI tabs
+            const activeButtons = aiButtons.filter(btn => btn.classList.contains('active'));
+            for (const button of activeButtons) {
+                const tabs = await chrome.tabs.query({ 
+                    url: button.dataset.query,
+                    currentWindow: true 
+                });
+                
+                if (tabs && tabs.length > 0) {
+                    const tab = tabs[0];
+                    try {
+                        await chrome.scripting.executeScript({
+                            target: { tabId: tab.id },
+                            func: (prompt, modelId) => {
+                                // Utility function to simulate user input
+                                const simulateUserInput = (element, text) => {
+                                    if (element) {
+                                        // Clear existing text
+                                        element.value = '';
+                                        element.innerHTML = '';
+                                        element.textContent = '';
+
+                                        // Set new text
+                                        if (element.tagName === 'TEXTAREA' || element.getAttribute('contenteditable') === null) {
+                                            element.value = text;
+                                        } else {
+                                            element.innerHTML = text;
+                                            element.textContent = text;
+                                        }
+
+                                        // Dispatch events to simulate user interaction
+                                        ['input', 'change', 'paste'].forEach(eventType => {
+                                            element.dispatchEvent(new Event(eventType, { bubbles: true }));
+                                        });
+                                    }
+                                };
+
+                                // Utility function to submit
+                                const submitPrompt = (input) => {
+                                    if (!input) return;
+
+                                    // Try multiple submission methods
+                                    const sendButtons = [
+                                        input.parentElement?.querySelector('button[type="submit"]'),
+                                        input.parentElement?.querySelector('button[aria-label="Send"]'),
+                                        input.parentElement?.querySelector('button[data-testid="send-button"]'),
+                                        document.querySelector('button[type="submit"]'),
+                                        document.querySelector('button[aria-label="Send"]'),
+                                        document.querySelector('button[data-testid="send-button"]')
+                                    ];
+
+                                    const sendButton = sendButtons.find(btn => btn && !btn.disabled);
+
+                                    if (sendButton) {
+                                        sendButton.click();
+                                    } else {
+                                        // Fallback to Enter key
+                                        const enterEvent = new KeyboardEvent('keydown', {
+                                            key: 'Enter',
+                                            code: 'Enter',
+                                            keyCode: 13,
+                                            which: 13,
+                                            bubbles: true,
+                                            cancelable: true
+                                        });
+                                        input.dispatchEvent(enterEvent);
+                                    }
+                                };
+
+                                switch(modelId) {
+                                    case 'openai': // ChatGPT
+                                        const chatgptSelectors = [
+                                            '#prompt-textarea',
+                                            'textarea[data-id="root"]',
+                                            'textarea[placeholder*="Send a message"]'
+                                        ];
+
+                                        const chatgptInput = chatgptSelectors.reduce((found, selector) => 
+                                            found || document.querySelector(selector), null);
+
+                                        if (chatgptInput) {
+                                            // Use the same input simulation as other models
+                                            simulateUserInput(chatgptInput, prompt);
+                                            
+                                            // Use the same submission approach with a small delay
+                                            setTimeout(() => {
+                                                submitPrompt(chatgptInput);
+                                            }, 100);
+                                        }
+                                        break;
+
+                                    case 'claude':
+                                        const claudeSelectors = [
+                                            '[data-testid="message-input"]',
+                                            'textarea[name="message"]',
+                                            'div[contenteditable="true"]',
+                                            'textarea'
+                                        ];
+
+                                        const claudeInput = claudeSelectors.reduce((found, selector) => 
+                                            found || document.querySelector(selector), null);
+
+                                        if (claudeInput) {
+                                            simulateUserInput(claudeInput, prompt);
+                                            
+                                            // Automatic submission for Claude
+                                            setTimeout(() => {
+                                                submitPrompt(claudeInput);
+                                            }, 100);
+                                        }
+                                        break;
+
+                                    case 'gemini':
+                                        const geminiInput = document.querySelector('div[contenteditable="true"]');
+                                        if (geminiInput) {
+                                            // Set innerHTML and dispatch input event
+                                            geminiInput.innerHTML = prompt;
+                                            geminiInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            
+                                            // Single click submission for Gemini
+                                            const sendBtn = document.querySelector('button[aria-label="Send message"]');
+                                            if (sendBtn) {
+                                                setTimeout(() => {
+                                                    sendBtn.click();
+                                                }, 100);
+                                            }
+                                        }
+                                        break;
+
+                                    default:
+                                        const defaultInput = document.querySelector('textarea');
+                                        if (defaultInput) {
+                                            defaultInput.value = prompt;
+                                            defaultInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            
+                                            // Automatic submission for default
+                                            setTimeout(() => {
+                                                defaultInput.dispatchEvent(new KeyboardEvent('keydown', {
+                                                    key: 'Enter',
+                                                    code: 'Enter',
+                                                    keyCode: 13,
+                                                    which: 13,
+                                                    bubbles: true,
+                                                    cancelable: true
+                                                }));
+                                            }, 100);
+                                        }
+                                        break;
+                                }
+                            },
+                            args: [prompt, button.id]
+                        });
+                    } catch (err) {
+                        _LL(`Error with ${button.textContent}: ${err.message}`);
+                    }
+                }
+            }
+
+            // Show success animation
+            setTimeout(() => {
+                sendIcon.classList.remove('sending');
+                promptButtonElem.classList.add('send-success');
+                
+                // Clear input
+                promptTextElem.value = '';
+                promptTextElem.dispatchEvent(new Event('input'));
+                
+                // Remove success state after animation
+                setTimeout(() => {
+                    promptButtonElem.classList.remove('send-success');
+                }, 1000);
+            }, 500);
+        });
+
+        // Add tab listeners for real-time updates
+        chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+            // Check each button and update its state
+            for (const button of aiButtons) {
+                const existingTabs = await chrome.tabs.query({ 
+                    url: button.dataset.query,
+                    currentWindow: true 
+                });
+                
+                if (existingTabs && existingTabs.length > 0) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+
+            // Update All AI button state
+            const allActive = aiButtons.every(btn => btn.classList.contains('active'));
+            const someActive = aiButtons.some(btn => btn.classList.contains('active'));
+            allAiToggle.classList.remove('active', 'inactive');
+            if (allActive) {
+                allAiToggle.classList.add('active');
+            } else if (!someActive) {
+                allAiToggle.classList.add('inactive');
+            }
+        });
+
+        // Also listen for tab updates (in case URLs change)
+        chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+            if (changeInfo.status === 'complete') {
+                // Check each button and update its state
+                for (const button of aiButtons) {
+                    const existingTabs = await chrome.tabs.query({ 
+                        url: button.dataset.query,
+                        currentWindow: true 
+                    });
+                    
+                    if (existingTabs && existingTabs.length > 0) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                }
+
+                // Update All AI button state
+                const allActive = aiButtons.every(btn => btn.classList.contains('active'));
+                const someActive = aiButtons.some(btn => btn.classList.contains('active'));
+                allAiToggle.classList.remove('active', 'inactive');
+                if (allActive) {
+                    allAiToggle.classList.add('active');
+                } else if (!someActive) {
+                    allAiToggle.classList.add('inactive');
+                }
+            }
+        });
+
+        // Settings button click handler
+        document.querySelector('#settings-btn').addEventListener('click', () => {
+            chrome.tabs.create({ url: 'settings.html' });
+        });
+
+        // Handle chat title click for dropdown
+        chatTitle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            chatTitle.classList.toggle('active');
+            chatDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            chatTitle.classList.remove('active');
+            chatDropdown.classList.remove('show');
+        });
+
+        // Handle dropdown menu actions
+            chatDropdown.addEventListener('click', async (e) => {
+            const dropdownItem = e.target.closest('.dropdown-item');
+            if (!dropdownItem) return;
+
+            const action = dropdownItem.dataset.action;
+            
+            switch (action) {
+                case 'edit':
+                    if (!activeChat) return;
+                    const chatNameSpan = activeChat.querySelector('span');
+                    const currentName = chatNameSpan.textContent;
+                    const newName = prompt('Enter new name:', currentName);
+                    if (newName && newName.trim()) {
+                        // Update messages storage with new chat name
+                            if (chatMessages[activeChat.dataset.chatId]) {
+                                chatMessages[activeChat.dataset.chatId].name = newName;
+                            }
+                        chatNameSpan.textContent = newName;
+                            activeChat.dataset.chatId = activeChat.dataset.chatId;
+                        chatTitleText.textContent = newName;
+                        saveChats();
+                    }
+                    break;
+
+                case 'delete':
+                    if (!activeChat) return;
+                    if (confirm('Are you sure you want to delete this chat?')) {
+                            try {
+                                const chatId = activeChat.dataset.chatId;
+                                
+                                // Delete from Firebase first
+                                await deleteChat(chatId);
+                                
+                                // If Firebase delete successful, update local state
+                                delete chatMessages[chatId];
+                        activeChat.remove();
+                        chatTitleText.textContent = 'Select a chat';
+                        chatContainer.innerHTML = '';
+                        activeChat = null;
+                                
+                                showNotification('Chat deleted successfully');
+                            } catch (error) {
+                                console.error('Error deleting chat:', error);
+                                showNotification('Failed to delete chat');
+                            }
+                    }
+                    break;
+
+                case 'info':
+                    if (!activeChat) return;
+                    const chatName = activeChat.dataset.chatId;
+                        const messageCount = chatMessages[chatName]?.messages.length || 0;
+                    alert(`Chat: ${chatName}\nMessages: ${messageCount}`);
+                    break;
+                    
+                case 'export':
+                    if (!activeChat) return;
+                    const chatId = activeChat.dataset.chatId;
+                    const messages = chatMessages[chatId] || [];
+                    
+                    // Format the content with proper date handling
+                    const now = new Date();
+                    const header = `Chat Export: ${chatId}\nExported on: ${formatCustomDate(now)} ${formatCustomTime(now.getHours(), now.getMinutes())}\nTotal Messages: ${messages.length}\n\n`;
+                    
+                    const formattedMessages = messages.map(msg => {
+                        // Handle both string messages and message objects
+                        const text = typeof msg === 'string' ? msg : msg.text;
+                        
+                        // Get timestamp from sentAt object if available
+                        let dateStr, timeStr;
+                        if (msg.sentAt) {
+                            const { hours, minutes, date, month, year } = msg.sentAt;
+                            const msgDate = new Date(year, month, date);
+                            dateStr = formatCustomDate(msgDate);
+                            timeStr = formatCustomTime(hours, minutes);
+                        } else if (msg.timestamp) {
+                            const timestamp = new Date(msg.timestamp);
+                            if (!isNaN(timestamp)) {
+                                dateStr = formatCustomDate(timestamp);
+                                timeStr = formatCustomTime(timestamp.getHours(), timestamp.getMinutes());
+                            } else {
+                                dateStr = formatCustomDate(now);
+                                timeStr = formatCustomTime(now.getHours(), now.getMinutes());
+                            }
+                        } else {
+                            dateStr = formatCustomDate(now);
+                            timeStr = formatCustomTime(now.getHours(), now.getMinutes());
+                        }
+                        
+                        return `[${dateStr} ${timeStr}] ${text}`;
+                    }).join('\n\n');
+                    
+                    // Create file name with current date and message count
+                    const date = formatCustomDate(now);
+                    const fileName = `${chatId.replace(/[^a-z0-9]/gi, '_')}_${date}_${messages.length}msgs.txt`;
+                    
+                    // Create and trigger download
+                    const blob = new Blob([header + formattedMessages], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    
+                    showNotification('Chat exported successfully');
+                    break;
+
+                case '📦 Archive chat':
+                    if (activeChat) {
+                        const chatId = activeChat.dataset.chatId;
+                        const chatData = chatMessages[chatId];
+                        if (chatData) {
+                            try {
+                                // Add archived flag to chat data
+                                chatData.archived = true;
+                                // Save to Firebase
+                                await saveChat(chatData);
+                                // Remove from current view
+                                activeChat.remove();
+                                delete chatMessages[chatId];
+                                showNotification('Chat archived successfully');
+                            } catch (error) {
+                                console.error('Error archiving chat:', error);
+                                showNotification('Failed to archive chat');
+                            }
+                        }
+                    } else {
+                        showNotification('Please select a chat to archive');
+                    }
+                    break;
+            }
+
+            chatDropdown.classList.remove('show');
+        });
+
+            // Initialize chats
+            await initializeChats();
 
         // Initialize side footer
         initializeSideFooter();
@@ -1467,11 +2038,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                         case '↪️ Log out':
                             const user = JSON.parse(localStorage.getItem('user'));
                             if (user) {
-                                // Clear user data
-                                localStorage.removeItem('user');
-                                // Update UI
-                                checkLoginState();
-                                showNotification('Logged out successfully');
+                                try {
+                                    // Clear user data
+                                    localStorage.removeItem('user');
+                                    // Clear chat cache
+                                    await chrome.storage.local.remove(['chatCache', 'chatCacheTimestamp', 'chatCacheVersion']);
+                                    // Clear local chats
+                                    await chrome.storage.local.remove('localChats');
+                                    
+                                    // Show notification
+                                    showNotification('Logged out successfully');
+                                    
+                                    // Reload the extension
+                                    setTimeout(() => {
+                                        chrome.runtime.reload();
+                                        window.location.reload();
+                                    }, 1000);
+                                } catch (error) {
+                                    console.error('Error during logout:', error);
+                                    showNotification('Error during logout');
+                                }
                             }
                             break;
                     }
@@ -1550,32 +2136,4 @@ function createChatElement(chatName, chatId, insertAtTop = false) {
     // ... rest of existing code ...
 }
 
-// Add styles for the Show More button
-const showMoreStyles = document.createElement('style');
-showMoreStyles.textContent += `
-    .show-more-container {
-        display: flex;
-        justify-content: center;
-        padding: 10px;
-        margin: 5px;
-    }
-    
-    .show-more-button {
-        background-color: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.2s ease;
-    }
-    
-    .show-more-button:hover {
-        background-color: var(--bg-hover);
-    }
-`;
-document.head.appendChild(showMoreStyles);
-    
-    
-    
+

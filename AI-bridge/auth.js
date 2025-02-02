@@ -13,6 +13,56 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
+// Add notification styles at the top after Firebase config
+const style = document.createElement('style');
+style.textContent = `
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background-color: #333;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        opacity: 0;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+`;
+document.head.appendChild(style);
+
+// Add showNotification function before other functions
+function showNotification(message) {
+    // Remove existing notification if any
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create new notification
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Trigger animation
+    setTimeout(() => notification.classList.add('show'), 10);
+
+    // Remove notification after animation
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+}
+
 // Validation functions
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,25 +158,7 @@ document.querySelector('#login-form form').addEventListener('submit', async (e) 
             };
         }
 
-        localStorage.setItem('user', JSON.stringify({
-            uid: data.localId,
-            email: data.email,
-            emailVerified: false,
-            idToken: data.idToken,
-            refreshToken: data.refreshToken
-        }));
-        
-        // Notify all extension tabs about successful login
-        chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, { type: 'AUTH_COMPLETED' });
-            });
-        });
-        
-        // Close the popup window
-        chrome.windows.getCurrent(window => {
-            chrome.windows.remove(window.id);
-        });
+        handleLoginSuccess(data);
     } catch (error) {
         let errorMessage = 'Login failed: ';
         switch (error.code) {
@@ -187,25 +219,8 @@ document.querySelector('#register-form form').addEventListener('submit', async (
             };
         }
 
-        localStorage.setItem('user', JSON.stringify({
-            uid: data.localId,
-            email: data.email,
-            emailVerified: false,
-            idToken: data.idToken,
-            refreshToken: data.refreshToken
-        }));
-        
-        // Notify all extension tabs about successful registration
-        chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, { type: 'AUTH_COMPLETED' });
-            });
-        });
-        
-        // Close the popup window
-        chrome.windows.getCurrent(window => {
-            chrome.windows.remove(window.id);
-        });
+        // Use handleLoginSuccess for registration as well
+        handleLoginSuccess(data);
     } catch (error) {
         let errorMessage = 'Registration failed: ';
         switch (error.code) {
@@ -269,4 +284,37 @@ openAllBtn.addEventListener('click', async () => {
         console.error('Error opening tabs:', error);
         alert('Error opening tabs: ' + error.message);
     }
-}); 
+});
+
+// After successful login
+function handleLoginSuccess(user) {
+    try {
+        // Save user data
+        localStorage.setItem('user', JSON.stringify({
+            uid: user.localId,
+            email: user.email,
+            emailVerified: user.emailVerified || false,
+            idToken: user.idToken,
+            refreshToken: user.refreshToken
+        }));
+        
+        // Notify all extension views about successful login
+        chrome.runtime.sendMessage({ 
+            action: 'login_successful',
+            user: user
+        });
+
+        // Show success message
+        showNotification('Login successful!');
+        
+        // Close the auth window after a short delay
+        setTimeout(() => {
+            chrome.windows.getCurrent(window => {
+                chrome.windows.remove(window.id);
+            });
+        }, 1500); // Increased delay to ensure notification is visible
+    } catch (error) {
+        console.error('Error handling login success:', error);
+        showNotification('Error completing login');
+    }
+} 
