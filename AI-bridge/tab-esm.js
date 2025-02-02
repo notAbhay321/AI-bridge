@@ -52,13 +52,13 @@ async function loadFirebaseScripts() {
         await new Promise(resolve => firestoreScript.onload = resolve);
 
         // Initialize Firebase
-            firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         window.database = firebase.firestore();
 
         // Initialize user data if logged in
         const user = JSON.parse(localStorage.getItem('user'));
         if (user) {
-            await initializeUserData(user);
+                await initializeUserData(user);
         }
     } catch (error) {
         console.error('Error loading Firebase:', error);
@@ -241,6 +241,16 @@ async function deleteChat(chatId) {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        // Add message listener for auth completion
+        chrome.runtime.onMessage.addListener(async (message) => {
+            if (message.type === 'AUTH_COMPLETED') {
+                // Refresh login state and chats
+                await checkLoginState();
+                await initializeChats();
+                showNotification('Login successful! Loading your chats...');
+            }
+        });
+
         // Add styles for backup info
         const style = document.createElement('style');
         style.textContent = `
@@ -557,7 +567,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
             // Scroll to bottom
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         // Function to update last backup time
@@ -1522,8 +1532,8 @@ const checkLoginState = async () => {
         } else {
             loginBtn.setAttribute('title', 'Login/Signup to Sync Your Data');
             // ... rest of logged out state code ...
-            }
         }
+    }
     // ... rest of existing checkLoginState code ...
 };
 

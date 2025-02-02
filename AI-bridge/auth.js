@@ -116,6 +116,13 @@ document.querySelector('#login-form form').addEventListener('submit', async (e) 
             refreshToken: data.refreshToken
         }));
         
+        // Notify all extension tabs about successful login
+        chrome.tabs.query({}, function(tabs) {
+            tabs.forEach(tab => {
+                chrome.tabs.sendMessage(tab.id, { type: 'AUTH_COMPLETED' });
+            });
+        });
+        
         // Close the popup window
         chrome.windows.getCurrent(window => {
             chrome.windows.remove(window.id);
@@ -187,6 +194,13 @@ document.querySelector('#register-form form').addEventListener('submit', async (
             idToken: data.idToken,
             refreshToken: data.refreshToken
         }));
+        
+        // Notify all extension tabs about successful registration
+        chrome.tabs.query({}, function(tabs) {
+            tabs.forEach(tab => {
+                chrome.tabs.sendMessage(tab.id, { type: 'AUTH_COMPLETED' });
+            });
+        });
         
         // Close the popup window
         chrome.windows.getCurrent(window => {
