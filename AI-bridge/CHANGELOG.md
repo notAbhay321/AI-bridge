@@ -2,19 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0.5] - 2024-03-XX
+## [1.2.0.6] - 2024-03-20
 
-### Performance Improvements
-- Significantly reduced Firestore token usage by implementing pagination and optimizing data fetching
-- Removed automatic 5-minute backup to reduce unnecessary read operations
-- Implemented chat pagination: initial load of 10 chats + 5 chats per "Show More" click
-- Added lazy loading for messages (20 messages at a time) to reduce initial load
-- Optimized message storage using Firestore subcollections
+### Added
+- Added lazy loading for chat messages - loads full chat history only when opening a chat
+- Added optimized initial load - fetches only chat metadata on extension startup
+- Added improved chat history loading with proper message array handling
 
-### UI Enhancements
-- Added "Show More" button for loading additional chats
-- Improved chat loading performance with paginated results
-- Enhanced message loading with smooth lazy loading behavior
+### Changed
+- Modified chat initialization to load only essential data initially
+- Improved Firestore data fetching strategy for better performance
+- Enhanced chat loading performance by separating metadata and message content loading
+
+### Fixed
+- Fixed issue with unnecessary reloading of all chats on extension startup
+- Fixed message array handling in Firestore data conversion
+- Fixed chat loading performance by implementing lazy loading
 
 ## [1.2.0.4] - 2024-03-19
 
