@@ -2017,6 +2017,30 @@ body {
     }
 }
 
+.load-more-btn {
+    width: calc(100% - 16px);
+    margin: 8px;
+    padding: 8px;
+    background-color: transparent;
+    color: #ececf1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.load-more-btn:hover {
+    background-color: #2A2B32;
+    border-color: rgba(255,255,255,.3);
+}
+
+.load-more-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 
   
 

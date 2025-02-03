@@ -713,59 +713,41 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Load saved chats
                 const savedChats = await loadChats();
                 if (savedChats && savedChats.length > 0) {
-                    // Group chats by time period
-                    const now = new Date();
-                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    const sevenDaysAgo = new Date(today);
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    const thirtyDaysAgo = new Date(today);
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    // Store all chats in memory
+                    window.allChats = savedChats;
+                    window.currentChatIndex = 0;
+                    window.chatsPerLoad = 10; // Initial load shows 10 chats
+                    window.subsequentChatsPerLoad = 5; // Load 5 chats at a time after initial load
 
-                    let currentSection = null;
+                    // Display initial batch of chats
+                    await displayChatBatch(0, window.chatsPerLoad);
 
-                    savedChats.forEach(chat => {
-                        const chatDate = new Date(chat.lastMessageTimestamp);
-                        let section = '';
-
-                        if (chatDate >= today) {
-                            section = 'Today';
-                        } else if (chatDate >= yesterday) {
-                            section = 'Yesterday';
-                        } else if (chatDate >= sevenDaysAgo) {
-                            section = 'Previous 7 Days';
-                        } else if (chatDate >= thirtyDaysAgo) {
-                            section = 'Previous 30 Days';
-                        } else {
-                            section = 'Older';
+                    // Add load more button if there are more chats
+                    if (savedChats.length > window.chatsPerLoad) {
+                        // Remove existing Load More button if any
+                        const existingBtn = chatList.querySelector('.load-more-btn');
+                        if (existingBtn) {
+                            existingBtn.remove();
                         }
 
-                        // Add section separator if needed
-                        if (section !== currentSection) {
-                            chatList.appendChild(createTimeSeparator(section));
-                            currentSection = section;
-                        }
-
-                        // Add chat to memory
-                        chatMessages[chat.id] = {
-                            id: chat.id,
-                            name: chat.name || chat.title,
-                            title: chat.title,
-                            messages: [],
-                            createdAt: chat.createdAt || Date.now(),
-                            updatedAt: chat.updatedAt || Date.now(),
-                            lastMessageTimestamp: chat.lastMessageTimestamp
+                        const loadMoreBtn = document.createElement('button');
+                        loadMoreBtn.className = 'load-more-btn';
+                        loadMoreBtn.textContent = `Load More (${savedChats.length - window.chatsPerLoad} remaining)`;
+                        loadMoreBtn.onclick = async () => {
+                            const start = window.currentChatIndex;
+                            const end = start + window.subsequentChatsPerLoad;
+                            await displayChatBatch(start, end);
+                            
+                            // Update button text or remove if no more chats
+                            const remaining = savedChats.length - window.currentChatIndex;
+                            if (remaining <= 0) {
+                                loadMoreBtn.remove();
+                            } else {
+                                loadMoreBtn.textContent = `Load More (${remaining} remaining)`;
+                            }
                         };
-
-                        // Create chat element
-                        createChatElement(chatMessages[chat.id].name, chat.id, false);
-                    });
-
-                    // Activate the first chat (most recent)
-                    const firstChat = chatList.querySelector('.chat-item');
-                    if (firstChat) {
-                        activateChat(firstChat);
+                        // Always append the button at the end
+                        chatList.appendChild(loadMoreBtn);
                     }
                 } else {
                     // Create a welcome chat if no chats exist
@@ -792,13 +774,79 @@ document.addEventListener("DOMContentLoaded", async () => {
                     // Save the welcome chat
                     await saveChat(chatData);
                 }
-
-                // Update last backup time
-                updateLastBackupTime();
             } catch (error) {
                 console.error('Error initializing chats:', error);
-                showNotification('Error loading chats');
+                showNotification('Failed to load chats');
             }
+        };
+
+        // Helper function to display a batch of chats
+        const displayChatBatch = async (start, end) => {
+            const chats = window.allChats.slice(start, end);
+            let currentSection = null;
+
+            // Initialize date variables
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            // Get the Load More button if it exists
+            const loadMoreBtn = chatList.querySelector('.load-more-btn');
+            
+            for (const chat of chats) {
+                const chatDate = new Date(chat.lastMessageTimestamp);
+                let section = '';
+
+                if (chatDate >= today) {
+                    section = 'Today';
+                } else if (chatDate >= yesterday) {
+                    section = 'Yesterday';
+                } else if (chatDate >= sevenDaysAgo) {
+                    section = 'Previous 7 Days';
+                } else if (chatDate >= thirtyDaysAgo) {
+                    section = 'Previous 30 Days';
+                } else {
+                    section = 'Older';
+                }
+
+                // Add section separator if needed
+                if (section !== currentSection) {
+                    const separator = createTimeSeparator(section);
+                    if (loadMoreBtn) {
+                        chatList.insertBefore(separator, loadMoreBtn);
+                    } else {
+                        chatList.appendChild(separator);
+                    }
+                    currentSection = section;
+                }
+
+                // Add chat to memory
+                chatMessages[chat.id] = {
+                    id: chat.id,
+                    name: chat.name || chat.title,
+                    title: chat.title,
+                    messages: [],
+                    createdAt: chat.createdAt || Date.now(),
+                    updatedAt: chat.updatedAt || Date.now(),
+                    lastMessageTimestamp: chat.lastMessageTimestamp
+                };
+
+                // Create chat element and insert before the Load More button
+                const chatElement = createChatElement(chatMessages[chat.id].name, chat.id, false);
+                if (loadMoreBtn) {
+                    chatList.insertBefore(chatElement, loadMoreBtn);
+                } else {
+                    chatList.appendChild(chatElement);
+                }
+            }
+
+            // Update the current index
+            window.currentChatIndex = end;
         };
 
         // Modified createNewChat function
