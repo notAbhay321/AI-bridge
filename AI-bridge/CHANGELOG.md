@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0.7] - 2024-03-XX
+
+### Added
+- Pre-prompt templates feature
+  - Add custom pre-prompt templates
+  - Edit and delete existing templates
+  - Quick access to commonly used prompts
+  - Templates persist across sessions
+  - Templates sync with Firebase when logged in
+
+### Changed
+- Updated UI to include pre-prompt section
+- Improved storage handling with better error management
+- Enhanced user feedback with notifications
+
 ## [1.2.0.4] - 2024-03-19
 
 ### Added

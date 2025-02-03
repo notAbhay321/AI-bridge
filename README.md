@@ -1,127 +1,173 @@
-# Chrome AI-MultiPrompt-Extension
+# 🌉 AI-Bridge
 
-## Title from package
+<div align="center">
 
-AI-MultiPrompt
+![AI-Bridge Logo](icons/icon128.png)
 
-## Summary from package
+A powerful Chrome extension that bridges multiple AI chat services into one seamless interface.
 
-A Web Extension that allows to simultaneously submit a prompt to multiple AI chats
+[![Version](https://img.shields.io/badge/version-1.2.0.7-blue.svg)](https://github.com/yourusername/AI-bridge)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Description
-This extension submit a single prompt simultaneously to different AI chat previously opened in the browser's tabs.
+</div>
 
-### Features: 
+## 🌟 Overview
 
-* Currently the extension support:
-  - [ChatGPT]
-  - [Gemini]
-  - [Mistral]
-  - [Perplexity]
-  - [Copilot]
-  - [Deepseek]
-  - [Claude]
-* Firebase integration for stable chat storage
-* Chat history persistence across login sessions
-* Latest chats appear first for easy access
-* Remember last submitted prompt 
-* Copy last submitted prompt to the clipboard
-* Allows to choose which AI are involved in prompt analysis
-* Opens a pinned tab for each AI chat chosen (if doesn't already opened yet)
-* Quick access with Alt+A keyboard shortcut
+AI-Bridge revolutionizes your AI interaction experience by allowing you to simultaneously interact with multiple AI services from a single, elegant interface. Send one prompt to multiple AI models and compare their responses in real-time.
 
-### Usage 
+### 🎯 Key Features
 
-1. Open the extension:
-   - Click the extension icon in toolbar, or
-   - Press Alt+A (new shortcut for better compatibility)
-2. Write prompt
-3. Choose the AI chat you want to submit the prompt to and click on the "Submit" button
+#### 🤖 Supported AI Models
+- **[ChatGPT](https://chatgpt.com/)** - OpenAI's flagship model
+- **[Gemini](https://gemini.google.com/)** - Google's advanced AI
+- **[Claude](https://claude.ai/)** - Anthropic's AI assistant
+- **[Copilot](https://copilot.microsoft.com/)** - Microsoft's AI companion
+- **[Perplexity](https://www.perplexity.ai/)** - Research-focused AI
+- **[Deepseek](https://chat.deepseek.com/)** - Specialized AI chat
+- **[Mistral](https://chat.mistral.ai/chat)** - Advanced language model
 
-### Keyboard Shortcuts
+#### 💫 Core Features
+- **Pre-prompt Templates** - Save and reuse common prompts
+- **Firebase Integration** - Secure cloud storage for your chats
+- **Chat History** - Persistent across sessions and devices
+- **Smart Organization** - Chats organized by time periods
+- **Quick Access** - Keyboard shortcuts for efficiency
+- **Synchronized Backup** - Automatic chat backups
+- **Offline Support** - Works without internet connection
 
-* `Alt+A` - Open AI-Bridge (previously Ctrl+Shift+L)
-* `Ctrl+Enter` - Send prompt when input field is focused
+## 🚀 Getting Started
 
-### AI Model Links
+### Prerequisites
+- Google Chrome Browser
+- Firebase Account (for cloud features)
 
-ChatGPT: https://chatgpt.com/
-Gemini: https://gemini.google.com/
-Copilot: https://copilot.microsoft.com/
-Deepseek: https://chat.deepseek.com/
-Perplexity: https://www.perplexity.ai/
-Mistral: https://chat.mistral.ai/chat
-Claude: https://claude.ai/chat
+### Installation
 
-### Setup
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/AI-bridge.git
+   cd AI-bridge
+   ```
 
-1. Clone the repository
-2. Copy `config.example.js` to `config.js`
-3. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-4. Get your Firebase configuration from Project Settings
-5. Fill in your Firebase credentials in `config.js`
-6. **IMPORTANT**: Verify that `config.js` is in your `.gitignore` file
-7. Install dependencies and build the project
+2. **Configure Firebase**
+   ```bash
+   cp config.example.js config.js
+   # Edit config.js with your Firebase credentials
+   ```
 
-### ⚠️ Critical Security Warning
+3. **Load in Chrome**
+   - Open Chrome
+   - Go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select the extension directory
 
-**NEVER commit `config.js` with real credentials!** If you accidentally expose your Firebase credentials:
-1. **Immediately** rotate your API keys in Firebase Console
-2. Check Firebase Console for any unauthorized usage
-3. Update your local `config.js` with the new credentials
-4. Consider enabling additional security measures:
-   - IP address restrictions
-   - API key usage restrictions
-   - Firebase Security Rules
-   - Request quotas
+## 🎮 Usage Guide
 
-### Security Best Practices
+### Basic Operations
 
-1. **API Key Management**:
-   - ⚠️ Never commit `config.js` with real credentials
-   - ⚠️ Never share your API keys publicly
-   - Use `config.example.js` as a template
-   - Rotate API keys regularly
-   - Set up API key restrictions in Firebase Console
-   - Monitor API key usage
+1. **Launch AI-Bridge**
+   - Click extension icon or press `Alt+A`
+   - Interface opens in a new tab
 
-2. **Firebase Security**:
-   - Enable Authentication
-   - Set up proper Firestore rules
-   - Restrict API key usage by domain
-   - Monitor usage in Firebase Console
-   - Enable security alerts
-   - Regular security audits
+2. **Send Prompts**
+   - Type your prompt in the input field
+   - Select target AI models
+   - Press `Ctrl+Enter` or click Send
 
-3. **Local Development**:
-   - Keep `config.js` in `.gitignore`
-   - Use separate development credentials
-   - Regularly check for security alerts
-   - Follow Firebase security best practices
-   - Use environment-specific configurations
+3. **Pre-prompts**
+   - Click '+' to create new template
+   - Enter label and instructions
+   - Click template to auto-fill prompt
 
-### Git Security
+### ⌨️ Keyboard Shortcuts
 
-To prevent accidental commits of sensitive data:
-```bash
-# Add to .gitignore
-config.js
-*.log
-.env*
+| Shortcut | Action |
+|----------|--------|
+| `Alt+A` | Open AI-Bridge |
+| `Ctrl+Enter` | Send prompt |
+| `Alt+I` | New chat |
 
-# If you accidentally committed sensitive data
-git filter-branch --force --index-filter \
-"git rm --cached --ignore-unmatch config.js" \
---prune-empty --tag-name-filter cat -- --all
+## 🔒 Security Features
+
+### Data Protection
+- Secure Firebase integration
+- Local storage encryption
+- Automatic backups
+- Data persistence across sessions
+
+### Best Practices
+1. **API Security**
+   - Never commit credentials
+   - Use API key restrictions
+   - Regular key rotation
+
+2. **Firebase Security**
+   - Authentication required
+   - Firestore security rules
+   - Usage monitoring
+   - Regular audits
+
+## 🛠️ Technical Architecture
+
+### Components
+- **Frontend**: HTML, CSS, JavaScript
+- **Storage**: Firebase + Chrome Storage
+- **Authentication**: Firebase Auth
+- **Real-time Sync**: Firestore
+
+### File Structure
+```
+AI-bridge/
+├── manifest.json
+├── icons/
+├── _locales/
+├── js/
+│   ├── ai-models/
+│   ├── utils/
+│   └── core/
+└── css/
 ```
 
-### Important Security Note
-If you fork or clone this repository, make sure to:
-1. Never commit real Firebase credentials
-2. Create your own Firebase project
-3. Use your own API keys
-4. Set up proper security rules
-5. Monitor your Firebase usage
-6. Regularly rotate your credentials
+## 🔄 Version History
 
-The project maintainers are not responsible for any misuse of exposed credentials.
+### Current Version: 1.2.0.7
+- Pre-prompt templates
+- Enhanced UI
+- Improved storage handling
+- Better error management
+
+[See full changelog](CHANGELOG.md)
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🌟 Acknowledgments
+
+- All supported AI platforms
+- Firebase team
+- Chrome Extensions community
+- Our amazing contributors
+
+## 📞 Support
+
+- [Report a bug](https://github.com/yourusername/AI-bridge/issues)
+- [Request a feature](https://github.com/yourusername/AI-bridge/issues)
+- [Email support](mailto:your.email@example.com)
+
+---
+
+<div align="center">
+Made with ❤️ by the AI-Bridge Team
+</div>

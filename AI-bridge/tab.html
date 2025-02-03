@@ -2,7 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <title>AI-Bridge</title>
     <link rel="stylesheet" href="tab.css">
+    <link rel="stylesheet" href="pre-prompt.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script type="module" src="ai-chatgpt.js"></script>
     <script type="module" src="ai-claude.js"></script>
@@ -14,6 +16,7 @@
     <script type="module" src="ai-perplexity.js"></script>
     <script type="module" src="ai-phind.js"></script>
     <script type="module" src="tab-esm.js"></script>
+    <script type="module" src="pre-prompt.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -23,7 +26,7 @@
                 <h3 class="glitch" data-text="AI-Bridge">
                     <span data-text="A">A</span><span data-text="I">I</span><span data-text="-">-</span><span data-text="B">B</span><span data-text="R">R</span><span data-text="I">I</span><span data-text="D">D</span><span data-text="G">G</span><span data-text="E">E</span>
                 </h3>
-                <span class="version">v1.2.0.4</span>
+                <span class="version">v1.2.0.7</span>
             </div>
             <div class="nav-content">
                 <button class="new-chat-btn" id="new-chat-btn">New Chat <span class="shortcut-hint">[Alt+I]</span></button>
@@ -176,6 +179,33 @@
                             <!-- existing message actions -->
                         </div>
                     </button>
+                    
+                    <!-- Pre-prompt section -->
+                    <div class="pre-prompt-divider"></div>
+                    <div id="pre-prompt-container"></div>
+                    <button class="add-prompt-btn" id="add-prompt-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Pre-prompt popup -->
+                <div class="pre-prompt-overlay" id="pre-prompt-overlay" style="display: none;">
+                    <div class="pre-prompt-popup">
+                        <h2>Add Pre-Prompt</h2>
+                        <form class="pre-prompt-form" id="pre-prompt-form">
+                            <div class="form-group">
+                                <label for="prompt-label">Prompt Label</label>
+                                <input type="text" id="prompt-label" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="prompt-instructions">Prompt Instructions</label>
+                                <textarea id="prompt-instructions" required></textarea>
+                            </div>
+                            <button type="submit" class="save-prompt-btn">Save Prompt</button>
+                        </form>
+                    </div>
                 </div>
                 
                 <!-- Input Container -->

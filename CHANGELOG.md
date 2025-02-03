@@ -2,22 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0.6] - 2024-03-20
+## [1.2.0.7] - 2024-03-XX
 
 ### Added
-- Added lazy loading for chat messages - loads full chat history only when opening a chat
-- Added optimized initial load - fetches only chat metadata on extension startup
-- Added improved chat history loading with proper message array handling
+- Pre-prompt templates feature
+  - Add custom pre-prompt templates
+  - Edit and delete existing templates
+  - Quick access to commonly used prompts
+  - Templates persist across sessions
+  - Templates sync with Firebase when logged in
 
 ### Changed
-- Modified chat initialization to load only essential data initially
-- Improved Firestore data fetching strategy for better performance
-- Enhanced chat loading performance by separating metadata and message content loading
-
-### Fixed
-- Fixed issue with unnecessary reloading of all chats on extension startup
-- Fixed message array handling in Firestore data conversion
-- Fixed chat loading performance by implementing lazy loading
+- Updated UI to include pre-prompt section
+- Improved storage handling with better error management
+- Enhanced user feedback with notifications
 
 ## [1.2.0.4] - 2024-03-19
 
