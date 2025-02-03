@@ -123,21 +123,27 @@ document.querySelector('#login-form form').addEventListener('submit', async (e) 
     e.preventDefault();
     const email = document.querySelector('#login-email').value.trim();
     const password = document.querySelector('#login-password').value;
+    const errorDiv = document.querySelector('#login-form .error-message');
+    const submitBtn = document.querySelector('#login-form button[type="submit"]');
 
-    clearError('login-form');
+    // Clear previous error
+    errorDiv.classList.add('hidden');
 
     // Validate email and password
     if (!validateEmail(email)) {
-        showError('login-form', 'Please enter a valid email address');
+        errorDiv.querySelector('span').textContent = 'Please enter a valid email address';
+        errorDiv.classList.remove('hidden');
         return;
     }
 
     if (!validatePassword(password)) {
-        showError('login-form', 'Password must be at least 6 characters long');
+        errorDiv.querySelector('span').textContent = 'Password must be at least 6 characters long';
+        errorDiv.classList.remove('hidden');
         return;
     }
 
     try {
+        submitBtn.classList.add('loading');
         const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseConfig.apiKey}`, {
             method: 'POST',
             headers: {
@@ -160,21 +166,13 @@ document.querySelector('#login-form form').addEventListener('submit', async (e) 
 
         handleLoginSuccess(data);
     } catch (error) {
-        let errorMessage = 'Login failed: ';
-        switch (error.code) {
-            case 'EMAIL_NOT_FOUND':
-                errorMessage += 'No account found with this email';
-                break;
-            case 'INVALID_PASSWORD':
-                errorMessage += 'Invalid password';
-                break;
-            case 'USER_DISABLED':
-                errorMessage += 'Account has been disabled';
-                break;
-            default:
-                errorMessage += error.message;
-        }
-        showError('login-form', errorMessage);
+        const errorMessage = getLoginErrorMessage(error.code);
+        errorDiv.querySelector('span').textContent = errorMessage;
+        errorDiv.classList.remove('hidden');
+        // Clear password field for security
+        document.querySelector('#login-password').value = '';
+    } finally {
+        submitBtn.classList.remove('loading');
     }
 });
 
@@ -316,5 +314,119 @@ function handleLoginSuccess(user) {
     } catch (error) {
         console.error('Error handling login success:', error);
         showNotification('Error completing login');
+    }
+}
+
+// Password visibility toggle
+document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+        const input = e.currentTarget.parentElement.querySelector('input');
+        const icon = e.currentTarget.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+
+// Forgot password modal
+const modal = document.getElementById('forgot-password-modal');
+const forgotPasswordLink = document.querySelector('.forgot-password');
+const modalClose = document.querySelector('.modal-close');
+
+forgotPasswordLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.classList.add('show');
+});
+
+modalClose.addEventListener('click', () => {
+    modal.classList.remove('show');
+});
+
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        modal.classList.remove('show');
+    }
+});
+
+// Forgot password form submission
+document.getElementById('forgot-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.querySelector('#reset-email').value.trim();
+    const errorDiv = modal.querySelector('.error-message');
+    const submitBtn = modal.querySelector('button[type="submit"]');
+    
+    // Clear previous error
+    errorDiv.classList.add('hidden');
+    
+    // Validate email
+    if (!validateEmail(email)) {
+        errorDiv.querySelector('span').textContent = 'Please enter a valid email address';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        submitBtn.classList.add('loading');
+        const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requestType: 'PASSWORD_RESET',
+                email: email
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw {
+                code: data.error.message,
+                message: data.error.message
+            };
+        }
+
+        showNotification('Password reset link sent to your email');
+        modal.classList.remove('show');
+        document.getElementById('reset-email').value = '';
+    } catch (error) {
+        let errorMessage = '';
+        switch (error.code) {
+            case 'EMAIL_NOT_FOUND':
+                errorMessage = 'No account found with this email address';
+                break;
+            case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+                errorMessage = 'Too many attempts. Please try again later';
+                break;
+            default:
+                errorMessage = 'Failed to send reset link. Please try again';
+        }
+        errorDiv.querySelector('span').textContent = errorMessage;
+        errorDiv.classList.remove('hidden');
+    } finally {
+        submitBtn.classList.remove('loading');
+    }
+});
+
+// Update login error messages
+function getLoginErrorMessage(code) {
+    switch (code) {
+        case 'EMAIL_NOT_FOUND':
+            return 'Incorrect email or password. Please try again';
+        case 'INVALID_PASSWORD':
+            return 'Incorrect email or password. Please try again';
+        case 'USER_DISABLED':
+            return 'This account has been disabled. Please contact support';
+        case 'INVALID_LOGIN_CREDENTIALS':
+            return 'Incorrect email or password. Please try again';
+        default:
+            return 'Incorrect email or password. Please try again';
     }
 } 

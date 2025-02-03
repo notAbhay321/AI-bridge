@@ -1,54 +1,86 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f0f8ff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    color: #2d3748;
 }
 
 .container {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     padding: 20px;
 }
 
 .auth-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .tabs {
     display: flex;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 5px;
 }
 
 .tab-btn {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     border: none;
     background: none;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 500;
     cursor: pointer;
-    color: #666;
+    color: #718096;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-btn:after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #4c51bf;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
 }
 
 .tab-btn.active {
-    color: #0066cc;
-    border-bottom: 2px solid #0066cc;
+    color: #4c51bf;
+}
+
+.tab-btn.active:after {
+    transform: scaleX(1);
 }
 
 .form-container {
     padding: 20px 0;
+    animation: fadeIn 0.3s ease;
 }
 
 .form-container.hidden {
     display: none;
+}
+
+.form-container h2 {
+    margin: 0 0 25px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d3748;
+    text-align: center;
+    margin-bottom: 30px;
 }
 
 .form-group {
@@ -58,75 +90,331 @@ body {
 label {
     display: block;
     margin-bottom: 8px;
-    color: #333;
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    color: #4a5568;
+    font-weight: 500;
     font-size: 14px;
-    box-sizing: border-box;
 }
 
-input:focus {
+/* Password field and toggle styles */
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-group i {
+    position: absolute;
+    left: 12px;
+    color: #718096;
+    font-size: 16px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    padding-left: 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: #f7fafc;
+}
+
+.input-group input[type="password"] {
+    padding-right: 45px;
+}
+
+/* Password toggle button */
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+    z-index: 2;
+}
+
+.password-toggle i {
+    position: static;
+    margin: 0;
+    font-size: 18px;
+}
+
+.password-toggle:hover {
+    color: #4c51bf;
+}
+
+.password-toggle:focus {
     outline: none;
-    border-color: #0066cc;
+    color: #4c51bf;
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Input focus states */
+.input-group input:focus {
+    outline: none;
+    border-color: #4c51bf;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(76, 81, 191, 0.1);
+}
+
+.input-group:focus-within i {
+    color: #4c51bf;
 }
 
 .auth-btn {
     width: 100%;
-    padding: 12px;
-    background: #0066cc;
+    padding: 14px;
+    background: #4c51bf;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(76, 81, 191, 0.1);
 }
 
 .auth-btn:hover {
-    background: #0052a3;
+    background: #434190;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px rgba(76, 81, 191, 0.2);
+}
+
+.auth-btn:active {
+    transform: translateY(0);
 }
 
 .error {
-    color: #dc3545;
-    border-color: #dc3545;
+    color: #e53e3e;
+    border-color: #feb2b2;
+    background: #fff5f5;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
 }
 
 .success {
-    color: #28a745;
-    border-color: #28a745;
+    color: #2f855a;
+    border-color: #9ae6b4;
+    background: #f0fff4;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
 }
 
 /* AI Login Styles */
 .ai-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 25px;
 }
 
 .ai-login-btn {
-    padding: 12px;
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 14px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    color: #4a5568;
 }
 
 .ai-login-btn:hover {
-    background: #e9ecef;
-    border-color: #0066cc;
-    color: #0066cc;
+    background: #f7fafc;
+    border-color: #4c51bf;
+    color: #4c51bf;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(76, 81, 191, 0.1);
 }
 
 .ai-login-btn.active {
-    background: #e7f3ff;
-    border-color: #0066cc;
-    color: #0066cc;
+    background: #ebf4ff;
+    border-color: #4c51bf;
+    color: #4c51bf;
+}
+
+/* Update tab button styles for icons */
+.tab-btn i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+/* Update AI login button styles for icons */
+.ai-login-btn i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+/* Add animation for tab switching */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Add hover effect for input fields */
+.input-group:hover input {
+    border-color: #a0aec0;
+}
+
+/* Add loading state for buttons */
+.auth-btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.auth-btn.loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin: -10px 0 0 -10px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Form links */
+.form-links {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.forgot-password {
+    color: #4c51bf;
+    font-size: 14px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+    color: #434190;
+    text-decoration: underline;
+}
+
+/* Error message styles */
+.error-message {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
+    border-radius: 8px;
+    color: #DC2626;
+    margin: 16px 0;
+    font-size: 14px;
+    font-weight: 500;
+    animation: shake 0.5s ease-in-out;
+}
+
+.error-message.hidden {
+    display: none;
+}
+
+.error-message i {
+    margin-right: 10px;
+    font-size: 16px;
+    color: #DC2626;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Add focus styles for input fields with errors */
+.input-group.error input {
+    border-color: #FCA5A5;
+    background-color: #FEF2F2;
+}
+
+.input-group.error input:focus {
+    border-color: #DC2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Modal styles for forgot password */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #4c51bf;
+}
+
+.modal h3 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #2d3748;
 } 
