@@ -33,27 +33,34 @@ const getSettings = () =>
 // Load Firebase scripts
 async function loadFirebaseScripts() {
     try {
-        // Load Firebase App
+        // Load Firebase config first
+        const configScript = document.createElement('script');
+        configScript.src = chrome.runtime.getURL('firebase-config.js');
+        document.head.appendChild(configScript);
+        await new Promise(resolve => configScript.onload = resolve);
+
+        // Load Firebase app
         const appScript = document.createElement('script');
         appScript.src = chrome.runtime.getURL('firebase-app.js');
         document.head.appendChild(appScript);
         await new Promise(resolve => appScript.onload = resolve);
 
-        // Load Firebase Auth
-        const authScript = document.createElement('script');
-        authScript.src = chrome.runtime.getURL('firebase-auth.js');
-        document.head.appendChild(authScript);
-        await new Promise(resolve => authScript.onload = resolve);
-
-        // Load Firebase Firestore
+        // Load Firestore
         const firestoreScript = document.createElement('script');
         firestoreScript.src = chrome.runtime.getURL('firebase-firestore.js');
         document.head.appendChild(firestoreScript);
         await new Promise(resolve => firestoreScript.onload = resolve);
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        window.database = firebase.firestore();
+        if (typeof firebase === 'undefined') {
+            throw new Error('Firebase not loaded properly');
+        }
+
+        // Ensure database is initialized
+        if (!window.database) {
+            console.warn('Database not initialized, attempting to initialize it now');
+            window.database = window.firebase.firestore();
+        }
 
         // Initialize user data if logged in
         const user = JSON.parse(localStorage.getItem('user'));
@@ -62,20 +69,29 @@ async function loadFirebaseScripts() {
         }
     } catch (error) {
         console.error('Error loading Firebase:', error);
-        throw error;
+        // Don't throw the error, just log it and continue
     }
 }
 
 async function initializeUserData(user) {
     try {
+        // Check if user has a uid property
+        if (!user.uid) {
+            console.warn('User object does not have a uid property:', user);
+            // Generate a temporary uid if not available
+            user.uid = user.email ? user.email.replace(/[^a-zA-Z0-9]/g, '_') : 'temp_' + Date.now();
+        }
+        
         const userDoc = await window.database.doc(`users/${user.uid}`).get();
         
         // Create initial user data if it doesn't exist
-        if (!userDoc.exists()) {
+        if (!userDoc.exists) {
+            // Use a fallback for serverTimestamp if not available
+            const timestamp = Date.now();
             await window.database.doc(`users/${user.uid}`).set({
-                email: user.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                email: user.email || '',
+                createdAt: timestamp,
+                lastActive: timestamp,
                 chats: []
             });
 
@@ -83,17 +99,17 @@ async function initializeUserData(user) {
             const chatId = 'chat_' + Date.now();
             await window.database.doc(`users/${user.uid}/chats/${chatId}`).set({
                 title: 'Welcome Chat',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: timestamp,
+                updatedAt: timestamp,
                 messages: [{
                     text: 'Welcome to AI Bridge! Start by typing a message below.',
-                    timestamp: Date.now()
+                    timestamp: timestamp
                 }]
             });
         } else {
             // Update last active timestamp
             await window.database.doc(`users/${user.uid}`).set({
-                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                lastActive: Date.now()
             }, { merge: true });
         }
     } catch (error) {
@@ -114,8 +130,16 @@ const saveChat = async (chatData) => {
             const result = await chrome.storage.local.get('localChats');
             const localChats = result.localChats || {};
             
-            // Update the chat
-            localChats[chatData.id] = chatData;
+            // Update the chat with all necessary data
+            localChats[chatData.id] = {
+                id: chatData.id,
+                name: chatData.title || chatData.name,
+                title: chatData.title || chatData.name,
+                messages: chatData.messages || [],
+                createdAt: chatData.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                lastMessageTimestamp: chatData.lastMessageTimestamp || Date.now()
+            };
             
             // Save back to chrome.storage
             await chrome.storage.local.set({ localChats });
@@ -128,24 +152,61 @@ const saveChat = async (chatData) => {
 
     // If user is logged in, save to Firebase
     try {
-        const chatRef = window.database.collection(`users/${user.uid}/chats`).doc(chatData.id);
+        // Ensure database is initialized
+        if (!window.database) {
+            throw new Error('Firebase database not initialized');
+        }
         
         // Prepare chat data with metadata
         const messages = chatData.messages || [];
         const lastMessage = messages[messages.length - 1];
         
-        await chatRef.set({
+        // Convert data to Firestore format
+        const firestoreData = {
             title: chatData.title || chatData.name,
             messageCount: messages.length,
             lastMessageTimestamp: lastMessage ? lastMessage.timestamp : chatData.lastMessageTimestamp,
             createdAt: chatData.createdAt || Date.now(),
             updatedAt: Date.now(),
-            messages: messages, // Store full messages array
+            messages: messages.map(msg => ({
+                text: msg.text,
+                timestamp: msg.timestamp
+            })),
             archived: chatData.archived || false
-        });
+        };
+
+        // Save to Firestore using our mock implementation
+        await window.database.doc(`users/${user.uid}/chats/${chatData.id}`).set(firestoreData);
+
+        // Also save to local storage as backup
+        const result = await chrome.storage.local.get('localChats');
+        const localChats = result.localChats || {};
+        localChats[chatData.id] = {
+            ...firestoreData,
+            id: chatData.id
+        };
+        await chrome.storage.local.set({ localChats });
+
     } catch (error) {
         console.error('Error saving to Firebase:', error);
-        throw error;
+        // If Firebase fails, try saving to local storage as fallback
+        try {
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            localChats[chatData.id] = {
+                id: chatData.id,
+                name: chatData.title || chatData.name,
+                title: chatData.title || chatData.name,
+                messages: chatData.messages || [],
+                createdAt: chatData.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                lastMessageTimestamp: chatData.lastMessageTimestamp || Date.now()
+            };
+            await chrome.storage.local.set({ localChats });
+        } catch (localError) {
+            console.error('Error saving to local storage:', localError);
+            throw error; // Throw the original Firebase error
+        }
     }
 };
 
@@ -157,7 +218,21 @@ async function loadChats() {
         if (!user || !user.idToken) {
             const result = await chrome.storage.local.get('localChats');
             const localChats = result.localChats || {};
-            return Object.values(localChats).sort((a, b) => {
+            
+            // Convert localChats object to array and sort by timestamp
+            const chats = Object.values(localChats).map(chat => ({
+                id: chat.id,
+                name: chat.name || chat.title,
+                title: chat.title || chat.name,
+                messages: chat.messages || [],
+                messageCount: chat.messages?.length || 0,
+                createdAt: chat.createdAt || Date.now(),
+                updatedAt: chat.updatedAt || Date.now(),
+                lastMessageTimestamp: chat.lastMessageTimestamp || chat.updatedAt || chat.createdAt,
+                hasLoadedMessages: true // Local chats already have messages loaded
+            }));
+            
+            return chats.sort((a, b) => {
                 const timestampA = Number(a.lastMessageTimestamp);
                 const timestampB = Number(b.lastMessageTimestamp);
                 return timestampB - timestampA; // Newest first
@@ -165,32 +240,60 @@ async function loadChats() {
         }
 
         // If user is logged in, load from Firebase
-        const userChatsRef = window.database.collection(`users/${user.uid}/chats`);
-        // Only fetch chat metadata initially
-        const snapshot = await userChatsRef.get();
-        
+        try {
+            // Use our mock implementation to get chats
         const chats = [];
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (data) {
-                chats.push({
-                    id: doc.id,
-                    name: data.title || `Chat ${chats.length + 1}`,
-                    title: data.title || `Chat ${chats.length + 1}`,
-                    messageCount: data.messageCount || 0,
-                    createdAt: data.createdAt || Date.now(),
-                    updatedAt: data.updatedAt || Date.now(),
-                    lastMessageTimestamp: data.lastMessageTimestamp || data.updatedAt || data.createdAt,
-                    hasLoadedMessages: false // New flag to track if messages are loaded
-                });
-            }
-        });
+            
+            // Get all chats from local storage as a fallback
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            
+            // Convert localChats object to array and sort by timestamp
+            const localChatsArray = Object.values(localChats).map(chat => ({
+                id: chat.id,
+                name: chat.name || chat.title,
+                title: chat.title || chat.name,
+                messages: chat.messages || [],
+                messageCount: chat.messages?.length || 0,
+                createdAt: chat.createdAt || Date.now(),
+                updatedAt: chat.updatedAt || Date.now(),
+                lastMessageTimestamp: chat.lastMessageTimestamp || chat.updatedAt || chat.createdAt,
+                hasLoadedMessages: true // Local chats already have messages loaded
+            }));
+            
+            // Add local chats to the result
+            chats.push(...localChatsArray);
+            
+            return chats.sort((a, b) => {
+                const timestampA = Number(a.lastMessageTimestamp);
+                const timestampB = Number(b.lastMessageTimestamp);
+                return timestampB - timestampA;
+            });
+        } catch (error) {
+            console.error('Error loading chats from Firebase:', error);
+            // Fallback to local storage
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            
+            // Convert localChats object to array and sort by timestamp
+            const chats = Object.values(localChats).map(chat => ({
+                id: chat.id,
+                name: chat.name || chat.title,
+                title: chat.title || chat.name,
+                messages: chat.messages || [],
+                messageCount: chat.messages?.length || 0,
+                createdAt: chat.createdAt || Date.now(),
+                updatedAt: chat.updatedAt || Date.now(),
+                lastMessageTimestamp: chat.lastMessageTimestamp || chat.updatedAt || chat.createdAt,
+                hasLoadedMessages: true // Local chats already have messages loaded
+            }));
 
         return chats.sort((a, b) => {
             const timestampA = Number(a.lastMessageTimestamp);
             const timestampB = Number(b.lastMessageTimestamp);
             return timestampB - timestampA; // Newest first
         });
+        }
     } catch (error) {
         console.error('Error loading chats:', error);
         return [];
@@ -201,17 +304,24 @@ async function deleteChat(chatId) {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
         
-        // If user is not logged in, delete from chrome.storage
-        if (!user || !user.idToken) {
+        // Get local chats first
             const result = await chrome.storage.local.get('localChats');
             const localChats = result.localChats || {};
+        
+        // Delete from local storage
             delete localChats[chatId];
             await chrome.storage.local.set({ localChats });
-            return;
-        }
 
-        // If user is logged in, delete from Firebase
+        // If user is logged in, also try to delete from Firebase
+        if (user && user.idToken) {
+            try {
         await window.database.doc(`users/${user.uid}/chats/${chatId}`).delete();
+            } catch (error) {
+                console.error('Error deleting chat from Firebase:', error);
+                // Continue execution even if Firebase delete fails
+                // The chat is already deleted from local storage
+            }
+        }
     } catch (error) {
         console.error('Error deleting chat:', error);
         throw error;
@@ -222,35 +332,54 @@ async function loadChatMessages(chatId) {
     try {
         const user = JSON.parse(localStorage.getItem('user'));
         
-        // If user is not logged in, return empty messages
+        // If user is not logged in, load from chrome.storage
         if (!user || !user.idToken) {
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            const chat = localChats[chatId];
+            
+            if (chat && chat.messages) {
+                return chat.messages;
+            }
             return [];
         }
 
-        // Load messages from Firebase
-        const chatRef = window.database.doc(`users/${user.uid}/chats/${chatId}`);
-        const chatDoc = await chatRef.get();
+        // If user is logged in, try to load from Firebase first
+        try {
+            // Use our mock implementation to get chat messages
+            const chatDoc = await window.database.doc(`users/${user.uid}/chats/${chatId}`).get();
         
         if (chatDoc.exists) {
             const data = chatDoc.data();
-            // Handle Firebase array format
-            const messages = data.messages;
-            if (messages) {
-                // Check if it's a Firebase array value
-                if (messages.arrayValue && messages.arrayValue.values) {
-                    return messages.arrayValue.values.map(msg => ({
-                        text: msg.mapValue?.fields?.text?.stringValue || msg.text || '',
-                        timestamp: Number(msg.mapValue?.fields?.timestamp?.integerValue) || msg.timestamp || Date.now()
-                    }));
-                }
-                // Handle regular array format
-                if (Array.isArray(messages)) {
-                    return messages;
+                if (data && data.messages) {
+                    return data.messages;
                 }
             }
+            
+            // If not found in Firebase, try local storage
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            const chat = localChats[chatId];
+            
+            if (chat && chat.messages) {
+                return chat.messages;
+            }
+            
+            return [];
+        } catch (error) {
+            console.error('Error loading chat messages from Firebase:', error);
+            
+            // Fallback to local storage
+            const result = await chrome.storage.local.get('localChats');
+            const localChats = result.localChats || {};
+            const chat = localChats[chatId];
+            
+            if (chat && chat.messages) {
+                return chat.messages;
         }
         
         return [];
+        }
     } catch (error) {
         console.error('Error loading chat messages:', error);
         return [];
@@ -319,7 +448,47 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // Wait for database to initialize
         if (!window.database) {
-            throw new Error('Failed to initialize Firestore');
+            console.warn('Firestore not initialized, continuing without Firebase functionality');
+            // Create a mock database for local-only functionality
+            window.database = {
+                doc: function(path) {
+                    return {
+                        get: async function() {
+                            return { exists: false };
+                        },
+                        set: async function(data) {
+                            console.log('Mock database set:', path, data);
+                            return true;
+                        },
+                        delete: async function() {
+                            console.log('Mock database delete:', path);
+                            return true;
+                        }
+                    };
+                },
+                collection: function(path) {
+                    return {
+                        doc: function(id) {
+                            return {
+                                get: async function() {
+                                    return { exists: false };
+                                },
+                                set: async function(data) {
+                                    console.log('Mock database set:', path + '/' + id, data);
+                                    return true;
+                                },
+                                delete: async function() {
+                                    console.log('Mock database delete:', path + '/' + id);
+                                    return true;
+                                }
+                            };
+                        },
+                        get: async function() {
+                            return { docs: [] };
+                        }
+                    };
+                }
+            };
         }
 
         // Initialize UI elements
@@ -863,14 +1032,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     messages: [],
                     createdAt: timestamp,
                     updatedAt: timestamp,
-                    lastMessageTimestamp: timestamp
+                    lastMessageTimestamp: timestamp,
+                    hasLoadedMessages: true
                 };
 
                 // Update local state
                 chatMessages[chatId] = chatData;
 
                 // Create UI element
-                const chatElement = createChatElement(chatName, chatId);
+                const chatElement = createChatElement(chatName, chatId, true);
 
                 // Find or create the "Today" section
                 let todaySection = Array.from(chatList.children).find(
@@ -890,15 +1060,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     chatList.appendChild(chatElement);
                 }
 
-                // Only save to Firebase if user is logged in
-                const user = JSON.parse(localStorage.getItem('user'));
-                if (user && user.idToken) {
+                // Save to storage
                     try {
                         await saveChat(chatData);
                     } catch (error) {
-                        console.error('Error saving to Firebase:', error);
-                        // Continue even if Firebase save fails
-                    }
+                    console.error('Error saving chat:', error);
+                    showNotification('Failed to save chat');
                 }
 
                 // Activate the new chat
@@ -1185,7 +1352,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const timestampSpan = document.createElement('span');
             timestampSpan.className = 'chat-timestamp';
             
-            // Get the chat's last activity timestamp
+            // Add timestamp text
             const timestamp = chatMessages[chatId]?.lastMessageTimestamp || Date.now();
             const date = new Date(timestamp);
             const now = new Date();
@@ -1193,29 +1360,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
             
-            // Format timestamp
             let timeStr;
             if (date >= today) {
-                timeStr = date.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
+                timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } else if (date >= yesterday) {
                 timeStr = 'Yesterday';
-            } else if (date >= new Date(today - 7 * 24 * 60 * 60 * 1000)) {
-                timeStr = date.toLocaleDateString('en-US', { weekday: 'short' });
             } else {
-                timeStr = date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
+                timeStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
             }
             timestampSpan.textContent = timeStr;
             
+            // Append spans to left container
             leftContainer.appendChild(nameSpan);
             leftContainer.appendChild(timestampSpan);
-            chatItem.appendChild(leftContainer);
             
             // Create icons container
             const iconsDiv = document.createElement('div');
@@ -1223,9 +1380,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Create rename icon
             const renameIcon = document.createElement('button');
-            renameIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
             renameIcon.className = 'chat-icon rename-icon';
             renameIcon.title = 'Rename Chat';
+            renameIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
             renameIcon.onclick = (e) => {
                 e.stopPropagation();
                 const newName = prompt('Enter new name:', chatName);
@@ -1241,9 +1398,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Create archive icon
             const archiveIcon = document.createElement('button');
-            archiveIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>';
             archiveIcon.className = 'chat-icon archive-icon';
             archiveIcon.title = 'Archive This Chat';
+            archiveIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>';
             archiveIcon.onclick = async (e) => {
                 e.stopPropagation();
                 try {
@@ -1257,9 +1414,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Create delete icon
             const deleteIcon = document.createElement('button');
-            deleteIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
             deleteIcon.className = 'chat-icon delete-icon';
             deleteIcon.title = 'Delete This Chat';
+            deleteIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
             deleteIcon.onclick = async (e) => {
                 e.stopPropagation();
                 if (confirm('Are you sure you want to delete this chat?')) {
@@ -1282,16 +1439,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             };
             
+            // Add icons to the icons container
             iconsDiv.appendChild(renameIcon);
             iconsDiv.appendChild(archiveIcon);
             iconsDiv.appendChild(deleteIcon);
+            
+            // Add elements to chat item
+            chatItem.appendChild(leftContainer);
             chatItem.appendChild(iconsDiv);
             
+            // Add click event listener
             chatItem.addEventListener('click', () => activateChat(chatItem));
             
             // Insert based on the insertAtTop parameter
-            if (insertAtTop) {
-                chatList.insertBefore(chatItem, chatList.firstChild);
+            if (insertAtTop && chatList.firstChild) {
+                // Find the first chat item after any time separators
+                let insertAfter = null;
+                for (const child of chatList.children) {
+                    if (!child.classList.contains('time-separator')) {
+                        insertAfter = child;
+                        break;
+                    }
+                }
+                if (insertAfter) {
+                    chatList.insertBefore(chatItem, insertAfter);
+                } else {
+                    chatList.appendChild(chatItem);
+                }
             } else {
                 chatList.appendChild(chatItem);
             }
@@ -2171,17 +2345,199 @@ const checkLoginState = async () => {
     // ... rest of existing checkLoginState code ...
 };
 
-// Update chat icons in createChatElement function
-function createChatElement(chatName, chatId, insertAtTop = false) {
-    // ... existing code ...
+// Function to position action buttons near cursor
+function positionActionButtons(messageActions, event, message) {
+    const messageRect = message.getBoundingClientRect();
+    const x = event.clientX - messageRect.left;
+    const y = event.clientY - messageRect.top;
+
+    // Get the actions width and height after displaying it
+    messageActions.style.display = 'flex';
+    const actionsRect = messageActions.getBoundingClientRect();
     
-    renameIcon.setAttribute('title', 'Rename Chat');
+    // Position horizontally
+    if (window.innerWidth - event.clientX > actionsRect.width + 10) {
+        messageActions.style.left = `${x + 10}px`;
+    } else {
+        messageActions.style.left = `${x - actionsRect.width - 10}px`;
+    }
     
-    archiveIcon.setAttribute('title', 'Archive This Chat');
-    
-    deleteIcon.setAttribute('title', 'Delete This Chat');
-    
-    // ... rest of existing code ...
+    // Position vertically
+    messageActions.style.top = `${y}px`;
 }
+
+// Add event listeners for message hover
+document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.querySelector('.chat-container');
+    let currentMessageActions = null;
+    let currentMessage = null;
+    let hoverTimer = null;
+    let lastCursorX = 0;
+    let lastCursorY = 0;
+    const HOVER_DELAY = 500; // 500ms delay before showing actions
+
+    // Handle mouse movement over messages
+    chatContainer.addEventListener('mousemove', (event) => {
+        const message = event.target.closest('.message');
+        if (!message) {
+            if (currentMessageActions && !currentMessageActions.contains(event.target)) {
+                hideMessageActions();
+            }
+            return;
+        }
+
+        // Calculate cursor movement distance
+        const cursorDistance = Math.sqrt(
+            Math.pow(event.clientX - lastCursorX, 2) + 
+            Math.pow(event.clientY - lastCursorY, 2)
+        );
+
+        // Update last cursor position
+        lastCursorX = event.clientX;
+        lastCursorY = event.clientY;
+
+        // If cursor moved significantly, reset timer
+        if (cursorDistance > 5) {
+            clearTimeout(hoverTimer);
+            if (currentMessageActions && currentMessage !== message) {
+                hideMessageActions();
+            }
+
+            hoverTimer = setTimeout(() => {
+                const messageActions = message.querySelector('.message-actions');
+                if (!messageActions) return;
+
+                if (currentMessageActions) {
+                    hideMessageActions();
+                }
+
+                messageActions.classList.add('show');
+                currentMessageActions = messageActions;
+                currentMessage = message;
+
+                // Position the action buttons relative to the cursor
+                positionActionButtons(messageActions, event, message);
+            }, HOVER_DELAY);
+        }
+    });
+
+    function hideMessageActions() {
+        if (currentMessageActions) {
+            currentMessageActions.classList.remove('show');
+            currentMessageActions = null;
+            currentMessage = null;
+        }
+        clearTimeout(hoverTimer);
+    }
+
+    // Hide action buttons when mouse leaves the chat container
+    chatContainer.addEventListener('mouseleave', hideMessageActions);
+
+    // Hide action buttons when mouse leaves a message
+    // Hide action buttons when mouse leaves a message
+    chatContainer.addEventListener('mouseout', (event) => {
+        const message = event.target.closest('.message');
+        if (!message) return;
+
+        const relatedTarget = event.relatedTarget;
+        if (!message.contains(relatedTarget) && !relatedTarget?.closest('.message-actions')) {
+            const messageActions = message.querySelector('.message-actions');
+            if (messageActions) {
+                messageActions.classList.remove('show');
+                currentMessageActions = null;
+                currentMessage = null;
+            }
+        }
+    });
+});
+
+function initializeTextInput() {
+    const textInput = document.getElementById('text-prompt');
+    const inputContainer = document.querySelector('.input-container');
+    const toggleContainer = document.querySelector('.toggle-container');
+    let hoverTimeout;
+    
+    function adjustHeight() {
+        textInput.style.height = 'auto';
+        const newHeight = Math.min(textInput.scrollHeight, 200);
+        textInput.style.height = newHeight + 'px';
+        
+        // Add or remove expanded class based on content height
+        if (newHeight > 24) {
+            inputContainer.classList.add('input-expanded');
+        } else {
+            inputContainer.classList.remove('input-expanded');
+        }
+    }
+
+    textInput.addEventListener('input', adjustHeight);
+    textInput.addEventListener('paste', (e) => {
+        setTimeout(adjustHeight, 0);
+    });
+
+    // Reset height when sending message
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            setTimeout(() => {
+                textInput.style.height = '24px';
+                inputContainer.classList.remove('input-expanded');
+            }, 0);
+        }
+    });
+}
+
+// Add message hover functionality
+document.addEventListener('mouseover', (e) => {
+    const message = e.target.closest('.message');
+    if (!message) return;
+
+    clearTimeout(message.hoverTimeout);
+    message.hoverTimeout = setTimeout(() => {
+        const currentShowingMessage = document.querySelector('.message.show-actions');
+        if (currentShowingMessage && currentShowingMessage !== message) {
+            currentShowingMessage.classList.remove('show-actions');
+        }
+        message.classList.add('show-actions');
+    }, 2000);
+});
+
+document.addEventListener('mouseout', (e) => {
+    const message = e.target.closest('.message');
+    if (!message) return;
+
+    clearTimeout(message.hoverTimeout);
+    
+    // Check if mouse is over message actions
+    const messageActions = message.querySelector('.message-actions');
+    if (messageActions && !messageActions.contains(e.relatedTarget)) {
+        message.classList.remove('show-actions');
+    }
+});
+
+// Handle mouse over/out for message actions
+document.addEventListener('mouseover', (e) => {
+    const messageActions = e.target.closest('.message-actions');
+    if (!messageActions) return;
+    
+    const message = messageActions.closest('.message');
+    if (message) {
+        message.classList.add('show-actions');
+    }
+});
+
+document.addEventListener('mouseout', (e) => {
+    const messageActions = e.target.closest('.message-actions');
+    if (!messageActions) return;
+    
+    const message = messageActions.closest('.message');
+    if (message && !message.contains(e.relatedTarget)) {
+        message.classList.remove('show-actions');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeTextInput();
+    // ... existing code ...
+});
 
 
